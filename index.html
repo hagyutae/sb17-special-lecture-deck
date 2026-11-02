@@ -1,0 +1,2894 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SB17 환영회 특강 — 슬라이드</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<style>
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root{
+  --bg:            #080A0F;
+  --bg-slide:      #0D1119;
+  --surface:       #141A26;
+  --surface-2:     #1B2331;
+  --line:          rgba(255,255,255,.09);
+  --line-strong:   rgba(255,255,255,.16);
+
+  --text:          #EEF2F9;
+  --text-dim:      #A7B3C6;
+  --text-mute:     #6C7A90;
+
+  --accent:        #6E8BFF;
+  --accent-soft:   #A5B8FF;
+  --accent-2:      #4FD8C4;
+  --accent-warm:   #FFB86B;
+
+  --stage-w: 1280px;
+  --stage-h: 720px;
+
+  --pad-x: 88px;
+  --pad-y: 56px;
+  --pad-b: 84px;   /* 하단 크롬(브랜드/페이지번호) 확보 영역 */
+
+  --ease: cubic-bezier(.22,.61,.36,1);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Pretendard","Pretendard Variable",-apple-system,BlinkMacSystemFont,
+              "Apple SD Gothic Neo","Segoe UI",Roboto,"Noto Sans KR",sans-serif;
+  overflow:hidden;
+  display:grid;
+  place-items:center;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ============================================================
+   STAGE  (fixed 16:9, scaled to viewport)
+   ============================================================ */
+#viewport{
+  position:relative;
+  width:100vw; height:100vh;
+  overflow:hidden;
+}
+#stage{
+  position:absolute; left:0; top:0;
+  width:var(--stage-w);
+  height:var(--stage-h);
+  overflow:hidden;
+  background:var(--bg-slide);
+  transform-origin:0 0;          /* 좌상단 기준 + JS가 중앙으로 translate */
+  box-shadow:0 40px 120px rgba(0,0,0,.7);
+}
+
+/* ============================================================
+   CAROUSEL
+   ============================================================ */
+#track{
+  display:flex;
+  height:100%;
+  will-change:transform;
+  transition:transform .62s var(--ease);
+}
+.slide{
+  position:relative;
+  flex:0 0 var(--stage-w);
+  width:var(--stage-w);
+  height:var(--stage-h);
+  padding:var(--pad-y) var(--pad-x) var(--pad-b);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  background:var(--bg-slide);
+}
+
+/* ambient background texture */
+.slide::before{
+  content:"";
+  position:absolute; inset:0;
+  background:
+    radial-gradient(900px 520px at 88% -12%, rgba(110,139,255,.16), transparent 62%),
+    radial-gradient(700px 460px at -8% 108%, rgba(79,216,196,.10), transparent 60%);
+  pointer-events:none;
+}
+.slide::after{
+  content:"";
+  position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px);
+  background-size:64px 64px;
+  mask-image:radial-gradient(120% 100% at 50% 0%, #000 20%, transparent 78%);
+  pointer-events:none;
+}
+.slide > *{position:relative; z-index:1;}
+
+/* ============================================================
+   ENTER ANIMATION  (staggered, fires on active slide)
+   ============================================================ */
+[data-anim]{
+  opacity:0;
+  transform:translate3d(26px,0,0);
+}
+.slide.is-active [data-anim]{
+  animation:enterR .68s var(--ease) forwards;
+  animation-delay:calc(var(--d,0) * 80ms + 120ms);
+}
+@keyframes enterR{
+  from{opacity:0; transform:translate3d(26px,0,0);}
+  to  {opacity:1; transform:translate3d(0,0,0);}
+}
+@media (prefers-reduced-motion:reduce){
+  #track{transition:none;}
+  [data-anim]{opacity:1; transform:none;}
+  .slide.is-active [data-anim]{animation:none;}
+}
+
+/* ============================================================
+   SHARED TYPE / COMPONENTS
+   ============================================================ */
+.eyebrow{
+  display:inline-flex; align-items:center; gap:10px;
+  font-size:15px; font-weight:600; letter-spacing:.13em;
+  color:var(--accent-soft); text-transform:uppercase;
+}
+.eyebrow::before{
+  content:""; width:26px; height:2px; border-radius:2px;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+}
+
+.kicker{
+  font-size:17px; font-weight:600; letter-spacing:.02em;
+  color:var(--accent-2);
+}
+
+h1.title{
+  font-size:76px; font-weight:800; line-height:1.16; letter-spacing:-.032em;
+}
+h2.stitle{
+  font-size:40px; font-weight:700; line-height:1.26; letter-spacing:-.028em;
+  margin-top:12px;
+}
+.lead{
+  font-size:21px; line-height:1.72; color:var(--text-dim); font-weight:400;
+}
+.mark{
+  color:var(--text);
+  background:linear-gradient(180deg,transparent 62%, rgba(110,139,255,.32) 62%);
+  padding:0 2px;
+  font-weight:600;
+}
+
+.rule{height:1px;background:var(--line);border:0;}
+
+/* slide chrome */
+.chrome{
+  position:absolute; left:var(--pad-x); right:var(--pad-x); bottom:36px;
+  display:flex; align-items:center; justify-content:space-between;
+  font-size:13px; color:var(--text-mute); letter-spacing:.06em;
+  z-index:2;
+}
+.chrome .brand{display:flex;align-items:center;gap:9px;}
+.chrome .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);}
+
+/* ============================================================
+   SLIDE 1 — COVER
+   ============================================================ */
+.cover{justify-content:center;}
+.cover .title{max-width:900px; margin:22px 0 0;}
+.cover .title.en{
+  font-size:82px; line-height:1.08; letter-spacing:-.038em;
+}
+.cover .title-kr{
+  margin-top:22px;
+  font-size:30px; font-weight:700; letter-spacing:-.02em; color:var(--text-dim);
+}
+.cover .sub{margin-top:20px; max-width:720px; font-size:19px;}
+.cover .meta{
+  margin-top:44px; display:flex; align-items:center; gap:28px;
+  padding-top:26px; border-top:1px solid var(--line);
+  max-width:820px;
+}
+.cover .meta .who{font-size:20px;font-weight:700;}
+.cover .meta .who span{display:block;font-size:14px;font-weight:500;color:var(--text-mute);margin-top:5px;letter-spacing:.02em;}
+.cover .meta .when{margin-left:auto;text-align:right;font-size:15px;color:var(--text-dim);line-height:1.6;}
+.cover .meta .when b{color:var(--text);font-weight:600;}
+
+.orb{
+  position:absolute; right:-160px; top:-140px;
+  width:620px; height:620px; border-radius:50%;
+  background:conic-gradient(from 140deg, rgba(110,139,255,.55), rgba(79,216,196,.35), rgba(110,139,255,.05), rgba(110,139,255,.55));
+  filter:blur(90px); opacity:.55; z-index:0;
+}
+
+/* ============================================================
+   SLIDE · CAREER TRACK (intro 1 — company scale spectrum)
+   ============================================================ */
+.career-track{
+  margin-top:30px; flex:1;
+  display:grid; grid-template-columns:repeat(6,1fr); gap:14px;
+  align-items:end;
+}
+.ct-col{display:flex; flex-direction:column; gap:11px; height:100%; justify-content:flex-end;}
+.ct-bar-box{display:flex; align-items:flex-end; height:170px;}
+.ct-bar{
+  width:100%; border-radius:8px 8px 3px 3px;
+  background:linear-gradient(180deg, rgba(110,139,255,.9), rgba(110,139,255,.18));
+}
+.ct-col.teal .ct-bar{background:linear-gradient(180deg, rgba(79,216,196,.9), rgba(79,216,196,.18));}
+.ct-col.warm .ct-bar{background:linear-gradient(180deg, rgba(255,184,107,.9), rgba(255,184,107,.18));}
+.ct-col.mute .ct-bar{background:linear-gradient(180deg, rgba(167,179,198,.55), rgba(167,179,198,.10));}
+.ct-stage{
+  font-size:11px; font-weight:800; letter-spacing:.04em; color:var(--accent-soft);
+  text-align:center;
+}
+.ct-col.teal .ct-stage{color:var(--accent-2);}
+.ct-col.warm .ct-stage{color:var(--accent-warm);}
+.ct-col.mute .ct-stage{color:var(--text-mute);}
+.ct-name{
+  font-size:15px;font-weight:800;letter-spacing:-.015em;text-align:center;line-height:1.3;
+  white-space:nowrap;
+}
+.ct-yr{font-size:11px;color:var(--text-mute);text-align:center;font-variant-numeric:tabular-nums;letter-spacing:.02em;}
+
+/* ============================================================
+   SLIDE · DOMAIN FLOW (intro 2 — one domain, eight years)
+   ============================================================ */
+.domain-flow{
+  margin-top:30px;
+  display:grid; grid-template-columns:repeat(6,1fr); gap:10px;
+}
+.domain-flow.five{grid-template-columns:repeat(5,1fr); gap:13px;}
+.intro-body{flex:1; display:flex; flex-direction:column; justify-content:center; padding-bottom:20px;}
+
+/* ============================================================
+   SLIDE · COHORT GRID (intro 3 — codeit sprint history)
+   ============================================================ */
+.cohort-grid{
+  margin-top:32px;
+  display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;
+}
+.cohort-block{
+  background:var(--surface); border:1px solid var(--line); border-radius:18px;
+  padding:24px 26px; display:flex; flex-direction:column; gap:15px;
+}
+.cohort-block.now{
+  background:linear-gradient(160deg, rgba(110,139,255,.18), rgba(20,26,38,.5));
+  border-color:rgba(110,139,255,.4);
+}
+.cb-role{
+  font-size:12.5px;font-weight:800;letter-spacing:.09em;color:var(--text-mute);
+  text-transform:uppercase;
+}
+.cb-role.now{color:var(--accent-soft);}
+.cb-badges{display:flex; gap:9px; align-items:center;}
+.cb-badge{
+  font-size:19px;font-weight:800;letter-spacing:-.01em;color:var(--accent-soft);
+  background:rgba(110,139,255,.13); border:1px solid rgba(110,139,255,.3);
+  border-radius:11px; padding:9px 15px;
+}
+.cb-badge.teal{color:var(--accent-2);background:rgba(79,216,196,.11);border-color:rgba(79,216,196,.28);}
+.cb-badge.big{
+  font-size:28px; padding:11px 22px;
+  background:linear-gradient(160deg, rgba(110,139,255,.4), rgba(110,139,255,.16));
+  border-color:rgba(110,139,255,.55); color:#fff;
+}
+.cohort-block p{font-size:14.5px;line-height:1.6;color:var(--text-dim);}
+.df-item{
+  background:var(--surface); border:1px solid var(--line); border-radius:14px;
+  padding:16px 14px; display:flex; flex-direction:column; gap:7px; text-align:center;
+  position:relative;
+}
+.df-item .df-yr{font-size:10.5px;font-weight:800;letter-spacing:.06em;color:var(--text-mute);font-variant-numeric:tabular-nums;}
+.df-item .df-kind{font-size:15px;font-weight:700;letter-spacing:-.01em;line-height:1.35;}
+.df-item .df-co{font-size:11.5px;color:var(--accent-2);font-weight:700;letter-spacing:.02em;}
+.df-item.last{
+  background:linear-gradient(160deg, rgba(110,139,255,.16), rgba(20,26,38,.5));
+  border-color:rgba(110,139,255,.34);
+}
+.df-item.last .df-co{color:var(--accent-soft);}
+
+.origin-note{
+  margin-top:24px;
+  display:grid; grid-template-columns:auto 1fr; gap:22px; align-items:center;
+  background:rgba(255,255,255,.028); border:1px solid var(--line);
+  border-radius:16px; padding:18px 24px;
+}
+.origin-note .on-tag{
+  font-size:11.5px;font-weight:800;letter-spacing:.09em;color:var(--accent-warm);
+  border:1px solid rgba(255,184,107,.3); border-radius:999px; padding:6px 13px;
+  white-space:nowrap;
+}
+.origin-note p{font-size:15.5px;line-height:1.62;color:var(--text-dim);}
+.origin-note p b{color:var(--text);font-weight:700;}
+
+/* ============================================================
+   SLIDE 2 — AGENDA
+   ============================================================ */
+.agenda-head{display:flex;align-items:flex-end;justify-content:space-between;gap:40px;}
+.agenda-head .stitle{max-width:660px;}
+.budget{
+  text-align:right; font-size:14px; color:var(--text-mute); line-height:1.8; letter-spacing:.02em;
+}
+.budget b{display:block;font-size:30px;font-weight:800;color:var(--text);letter-spacing:-.02em;}
+
+.agenda-list{margin-top:28px; display:flex; flex-direction:column; gap:0;}
+.agenda-item{
+  display:grid; grid-template-columns:72px 1fr; align-items:center; gap:24px;
+  padding:15px 18px 15px 4px;
+  border-top:1px solid var(--line);
+  transition:background .3s var(--ease);
+}
+.agenda-item:last-child{border-bottom:1px solid var(--line);}
+.agenda-item .num{
+  font-size:14px; font-weight:800; letter-spacing:.1em;
+  color:var(--accent); font-variant-numeric:tabular-nums;
+}
+.agenda-item .body h3{font-size:23px;font-weight:700;letter-spacing:-.02em;}
+.agenda-item .body p{margin-top:4px;font-size:14.5px;color:var(--text-mute);line-height:1.5;}
+.agenda-item .time{
+  font-size:14px;font-weight:600;color:var(--text-dim);
+  border:1px solid var(--line-strong); border-radius:999px; padding:7px 15px;
+  white-space:nowrap; font-variant-numeric:tabular-nums;
+}
+.agenda-item.qa{opacity:.62;}
+.agenda-item.qa .num{color:var(--accent-2);}
+
+/* ============================================================
+   SLIDE 3 — QUESTION MAP
+   ============================================================ */
+.qhead{display:flex;align-items:flex-end;justify-content:space-between;gap:36px;}
+.qgrid{
+  margin-top:26px;
+  flex:1;
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  grid-template-rows:1fr 1fr .78fr;
+  gap:14px;
+}
+.qcard{
+  background:linear-gradient(180deg, var(--surface), rgba(20,26,38,.55));
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:18px 22px 18px;
+  display:flex; flex-direction:column; gap:10px;
+  min-height:118px;
+}
+.qcard.wide{grid-column:1 / -1; min-height:0;}
+.qcard .qtop{display:flex;align-items:center;gap:11px;}
+.qcard .qnum{
+  width:26px;height:26px;border-radius:8px;flex:0 0 auto;
+  display:grid;place-items:center;
+  background:rgba(110,139,255,.16); color:var(--accent-soft);
+  font-size:13px;font-weight:800; font-variant-numeric:tabular-nums;
+}
+.qcard .tag{
+  font-size:12px;font-weight:700;letter-spacing:.06em;
+  color:var(--accent-2); background:rgba(79,216,196,.10);
+  border:1px solid rgba(79,216,196,.22);
+  border-radius:999px; padding:4px 11px;
+}
+.qcard .tag.warm{color:var(--accent-warm);background:rgba(255,184,107,.10);border-color:rgba(255,184,107,.22);}
+.qcard p{font-size:16px;line-height:1.58;color:var(--text-dim);}
+.qcard p b{color:var(--text);font-weight:600;}
+
+.qnote{
+  margin-top:22px; display:flex; align-items:center; gap:12px;
+  font-size:15px; color:var(--text-mute);
+}
+.qnote .pill{
+  font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--accent);
+  border:1px solid rgba(110,139,255,.3); border-radius:999px; padding:5px 12px;
+}
+
+/* ============================================================
+   CHAPTER HEADER  (shared across Ch.01~04 slides)
+   ============================================================ */
+.ch-kicker{
+  display:flex; align-items:center; gap:10px;
+  font-size:14px; font-weight:700; letter-spacing:.09em;
+  color:var(--accent-2); text-transform:uppercase;
+}
+.ch-kicker .chno{
+  background:rgba(79,216,196,.12); border:1px solid rgba(79,216,196,.28);
+  border-radius:6px; padding:3px 9px; font-size:12px; letter-spacing:.06em;
+  color:var(--accent-2); font-weight:800;
+}
+.ch-kicker .sep{color:var(--text-mute); font-weight:400;}
+.ch-kicker .step{
+  margin-left:auto; font-size:12px; color:var(--text-mute); font-variant-numeric:tabular-nums;
+  letter-spacing:.1em; text-transform:none; font-weight:600;
+}
+.ch-title{
+  margin-top:16px;
+  font-size:46px; font-weight:800; line-height:1.24; letter-spacing:-.03em;
+}
+
+/* ============================================================
+   SLIDE · DEFINITION (contrast)
+   ============================================================ */
+.def-contrast{
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:stretch; gap:22px;
+}
+.def-card{
+  background:var(--surface); border:1px solid var(--line); border-radius:18px;
+  padding:26px 28px; display:flex; flex-direction:column; gap:10px; justify-content:center;
+}
+.def-card.hi{
+  background:linear-gradient(160deg, rgba(110,139,255,.16), rgba(20,26,38,.55));
+  border-color:rgba(110,139,255,.36);
+}
+.def-card .role{font-size:13px;font-weight:800;color:var(--text-mute);letter-spacing:.06em;text-transform:uppercase;}
+.def-card.hi .role{color:var(--accent-soft);}
+.def-card p{font-size:19px;line-height:1.55;font-weight:600;}
+.def-arrow{
+  width:42px; height:42px; border-radius:50%; display:grid; place-items:center;
+  background:var(--surface-2); border:1px solid var(--line-strong);
+  color:var(--text-dim); font-size:17px; align-self:center;
+}
+
+/* ============================================================
+   SLIDE · SCALE STEPS (organizational analogy bridge)
+   ============================================================ */
+.scale-steps{
+  margin-top:30px;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:22px;
+}
+.sstep{display:flex; flex-direction:column; align-items:center; text-align:center; gap:13px;}
+.sstep .sval{font-size:15px;font-weight:800;color:var(--text-dim);letter-spacing:.03em;}
+.sstep .sbar-box{height:172px; width:100%; display:flex; align-items:flex-end; justify-content:center;}
+.sstep .sbar{
+  width:58%; border-radius:12px 12px 6px 6px;
+  background:linear-gradient(180deg, rgba(110,139,255,.95), rgba(110,139,255,.22));
+}
+.sstep .stext{font-size:14.5px; line-height:1.56; color:var(--text-dim); max-width:270px;}
+.sstep.final .sval{color:var(--accent-warm);}
+.sstep.final .sbar{background:linear-gradient(180deg, var(--accent-warm), rgba(255,184,107,.25));}
+.sstep.final .stext{color:var(--text); font-weight:600;}
+
+.bridge-line{
+  margin-top:22px; padding-top:20px; border-top:1px solid var(--line);
+  text-align:center; font-size:20px; font-weight:700; color:var(--text-dim);
+}
+.bridge-line b{color:var(--accent-soft); font-weight:800;}
+
+/* ============================================================
+   SLIDE · RECAP CHIPS (synthesis / chapter close)
+   ============================================================ */
+.recap-row{
+  margin-top:36px;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:16px;
+}
+.recap-chip{
+  background:var(--surface); border:1px solid var(--line); border-radius:16px;
+  padding:22px 24px; display:flex; flex-direction:column; gap:9px;
+}
+.recap-chip .rc-tag{font-size:12px;font-weight:800;letter-spacing:.07em;color:var(--accent-2);text-transform:uppercase;}
+.recap-chip .rc-kr{font-size:22px;font-weight:800;letter-spacing:-.01em;}
+.recap-chip p{font-size:14.5px;line-height:1.58;color:var(--text-dim);}
+.recap-chip p b{color:var(--text);font-weight:700;}
+.recap-chip .rc-prob{
+  color:var(--text-mute); padding-bottom:9px; border-bottom:1px solid var(--line);
+}
+.recap-chip .rc-ans{color:var(--text-dim);}
+.recap-chip .rc-ans b{color:var(--accent-soft);font-weight:800;}
+
+/* ============================================================
+   SLIDE · LEARN GRID (what to study vs what to experience)
+   ============================================================ */
+.learn-grid{
+  margin-top:28px; flex:1;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:16px;
+}
+.learn-col{
+  background:var(--surface); border:1px solid var(--line); border-radius:18px;
+  padding:22px 22px; display:flex; flex-direction:column; gap:16px;
+  justify-content:center;
+}
+.learn-col .lc-head{display:flex;align-items:center;}
+.learn-col .lc-tag{
+  font-size:12.5px;font-weight:800;letter-spacing:.06em;color:var(--accent-2);
+  background:rgba(79,216,196,.10); border:1px solid rgba(79,216,196,.24);
+  border-radius:999px; padding:5px 12px;
+}
+.lc-block .lc-label{
+  font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--text-mute);
+  text-transform:uppercase; margin-bottom:6px;
+}
+.lc-block p{font-size:14.5px;line-height:1.6;color:var(--text-dim);}
+.lc-block.exp{
+  padding-top:13px; border-top:1px solid var(--line);
+}
+.lc-block.exp .lc-label{color:var(--accent-warm);}
+.lc-block.exp p b{color:var(--text);font-weight:700;}
+
+/* ============================================================
+   SLIDE · VALUE GRID (barrier to entry + AI) & chapter close
+   ============================================================ */
+.value-grid{
+  margin-top:28px; flex:1;
+  display:grid; grid-template-columns:1fr 1fr; gap:18px;
+}
+.value-card{
+  background:linear-gradient(180deg, var(--surface), rgba(20,26,38,.5));
+  border:1px solid var(--line); border-radius:20px;
+  padding:26px 28px; display:flex; flex-direction:column; gap:12px;
+  justify-content:center;
+}
+.value-card.ai{
+  background:linear-gradient(160deg, rgba(110,139,255,.14), rgba(20,26,38,.5));
+  border-color:rgba(110,139,255,.32);
+}
+.value-card .vc-tag{
+  align-self:flex-start;
+  font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--text-mute);
+  border:1px solid var(--line-strong); border-radius:999px; padding:5px 12px;
+}
+.value-card.ai .vc-tag{color:var(--accent-soft);border-color:rgba(110,139,255,.4);}
+.value-card h3{font-size:23px;font-weight:800;letter-spacing:-.02em;line-height:1.35;}
+.value-card p{font-size:15px;line-height:1.68;color:var(--text-dim);}
+.value-card p b{color:var(--text);font-weight:700;}
+
+.close-line{
+  margin-top:24px; padding-top:22px; border-top:1px solid var(--line);
+  text-align:center; font-size:27px; font-weight:800; letter-spacing:-.02em;
+}
+.close-line .accent{color:var(--accent-soft);}
+
+/* ============================================================
+   CHAPTER DIVIDER
+   ============================================================ */
+.chapter-divider{justify-content:center;}
+.cd-ghost{
+  position:absolute; right:40px; bottom:-90px;
+  font-size:400px; font-weight:900; line-height:.8; letter-spacing:-.06em;
+  color:transparent;
+  -webkit-text-stroke:2px rgba(110,139,255,.14);
+  z-index:0; pointer-events:none;
+}
+.cd-label{
+  display:inline-flex; align-items:center; gap:12px;
+  font-size:14px; font-weight:800; letter-spacing:.14em; color:var(--accent-2);
+}
+.cd-label::before{
+  content:""; width:34px; height:2px; border-radius:2px;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+}
+.cd-title{
+  margin-top:22px;
+  font-size:62px; font-weight:800; line-height:1.16; letter-spacing:-.034em;
+}
+.cd-desc{
+  margin-top:20px; font-size:21px; line-height:1.6; color:var(--text-dim); max-width:720px;
+}
+.cd-topics{
+  margin-top:44px; padding-top:26px; border-top:1px solid var(--line);
+  display:flex; flex-wrap:wrap; gap:10px; max-width:900px;
+}
+.cd-topic{
+  font-size:14.5px; font-weight:600; color:var(--text-dim);
+  background:rgba(255,255,255,.04); border:1px solid var(--line);
+  border-radius:999px; padding:9px 17px;
+}
+
+/* ============================================================
+   CH.02 — ESSENCE (3 lenses)
+   ============================================================ */
+.ess-grid{
+  margin-top:30px; flex:1;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:16px;
+}
+.ess-card{
+  background:linear-gradient(180deg, var(--surface), rgba(20,26,38,.5));
+  border:1px solid var(--line); border-radius:20px;
+  padding:26px 26px; display:flex; flex-direction:column; gap:12px; justify-content:center;
+}
+.ess-card .es-n{
+  width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
+  background:rgba(110,139,255,.16); color:var(--accent-soft);
+  font-size:14px;font-weight:800;
+}
+.ess-card h3{font-size:24px;font-weight:800;letter-spacing:-.02em;}
+.ess-card p{font-size:15px;line-height:1.62;color:var(--text-dim);}
+.ess-card .es-q{
+  margin-top:2px; font-size:14px; color:var(--accent-2); font-weight:600; line-height:1.5;
+}
+
+/* ============================================================
+   CH.02 — BFS / DFS graph
+   ============================================================ */
+.graph-wrap{
+  margin-top:24px; flex:1;
+  display:flex; align-items:center; justify-content:center;
+}
+.graph-wrap svg{width:100%; height:auto; max-height:260px;}
+.gnode{fill:rgba(167,179,198,.22); stroke:rgba(255,255,255,.18); stroke-width:1.5;}
+.gnode.on{fill:rgba(110,139,255,.9); stroke:rgba(165,184,255,.9); stroke-width:2;}
+.gedge{stroke:rgba(255,255,255,.16); stroke-width:1.6; fill:none;}
+.gedge.on{stroke:url(#gg); stroke-width:2.6;}
+.glabel{font-size:13px; font-weight:800; letter-spacing:.06em; fill:var(--text-mute);}
+.glabel.a{fill:var(--accent-2);}
+.glabel.b{fill:var(--accent-soft);}
+
+/* ============================================================
+   CH.02 — CS TIMING (3 options)
+   ============================================================ */
+.opt-list{margin-top:28px; flex:1; display:flex; flex-direction:column; gap:12px; justify-content:center;}
+.opt-row{
+  display:grid; grid-template-columns:44px 1fr; gap:20px; align-items:center;
+  background:var(--surface); border:1px solid var(--line); border-radius:16px;
+  padding:20px 24px;
+}
+.opt-row.no{opacity:.62;}
+.opt-row.yes{
+  background:linear-gradient(160deg, rgba(110,139,255,.16), rgba(20,26,38,.5));
+  border-color:rgba(110,139,255,.4);
+}
+.opt-mark{
+  width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+  font-size:17px;font-weight:800;
+  background:rgba(255,255,255,.06); color:var(--text-mute);
+}
+.opt-row.yes .opt-mark{background:rgba(110,139,255,.25); color:#fff;}
+.opt-row h3{font-size:20px;font-weight:700;letter-spacing:-.015em;}
+.opt-row p{margin-top:5px;font-size:14.5px;line-height:1.55;color:var(--text-dim);}
+.opt-row p b{color:var(--text);font-weight:700;}
+
+/* ============================================================
+   CH.02 — AI USE (3 modes with sample prompts)
+   ============================================================ */
+.ai-grid{
+  margin-top:26px; flex:1;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:16px;
+}
+.ai-card{
+  background:var(--surface); border:1px solid var(--line); border-radius:18px;
+  padding:22px 22px; display:flex; flex-direction:column; gap:13px;
+}
+.ai-card .ai-t{font-size:19px;font-weight:800;letter-spacing:-.015em;line-height:1.35;}
+.ai-quotes{display:flex; flex-direction:column; gap:8px;}
+.ai-q{
+  font-size:13.5px; line-height:1.5; color:var(--accent-soft);
+  background:rgba(110,139,255,.09); border-left:2px solid rgba(110,139,255,.45);
+  border-radius:0 8px 8px 0; padding:9px 12px;
+}
+.ai-card > p{font-size:13.5px;line-height:1.55;color:var(--text-mute);margin-top:auto;}
+.ai-card > p b{color:var(--text-dim);font-weight:700;}
+
+/* ============================================================
+   CH.02 — OOP / SPRING
+   ============================================================ */
+.oop-def{
+  margin-top:26px;
+  background:linear-gradient(160deg, rgba(110,139,255,.14), rgba(20,26,38,.5));
+  border:1px solid rgba(110,139,255,.32); border-radius:20px;
+  padding:26px 30px;
+}
+.oop-def .od-label{
+  font-size:12px;font-weight:800;letter-spacing:.1em;color:var(--accent-soft);
+  text-transform:uppercase; margin-bottom:12px;
+}
+.oop-def .od-steps{display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+.oop-def .od-step{
+  font-size:17px;font-weight:700;color:var(--text);
+  background:rgba(255,255,255,.05); border:1px solid var(--line-strong);
+  border-radius:12px; padding:11px 18px;
+}
+.oop-def .od-arrow{color:var(--text-mute);font-size:15px;}
+
+.oop-then{
+  margin-top:22px; display:grid; grid-template-columns:1fr 1fr; gap:16px; flex:1;
+}
+.oop-card{
+  border-radius:18px; padding:22px 24px;
+  display:flex; flex-direction:column; gap:10px; justify-content:center;
+}
+.oop-card.bad{background:rgba(255,107,107,.07); border:1px solid rgba(255,107,107,.24);}
+.oop-card.good{background:rgba(79,216,196,.08); border:1px solid rgba(79,216,196,.28);}
+.oop-card .oc-t{font-size:13px;font-weight:800;letter-spacing:.07em;}
+.oop-card.bad .oc-t{color:#FF9B9B;}
+.oop-card.good .oc-t{color:var(--accent-2);}
+.oop-card p{font-size:15.5px;line-height:1.6;color:var(--text-dim);}
+.oop-card p b{color:var(--text);font-weight:700;}
+
+/* ============================================================
+   CH.03 — TRACK TIMELINE
+   ============================================================ */
+.tl{margin-top:34px; flex:1; display:flex; flex-direction:column; justify-content:center; padding-bottom:8px;}
+.tl-band{
+  position:relative; height:52px; border-radius:12px;
+  background:linear-gradient(90deg, rgba(110,139,255,.22), rgba(79,216,196,.18));
+  border:1px solid rgba(110,139,255,.3);
+  display:flex; align-items:center; padding-left:20px;
+}
+.tl-band .tb-t{font-size:15px;font-weight:800;color:var(--accent-soft);letter-spacing:.02em;}
+.tl-band .tb-s{margin-left:12px;font-size:13.5px;color:var(--text-dim);}
+.tl-rail{
+  position:relative; margin-top:14px; height:78px;
+  border-radius:12px; background:rgba(255,255,255,.035); border:1px solid var(--line);
+}
+.tl-proj{
+  position:absolute; top:9px; bottom:9px; border-radius:10px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+  background:linear-gradient(180deg, rgba(79,216,196,.3), rgba(79,216,196,.12));
+  border:1px solid rgba(79,216,196,.42);
+}
+.tl-proj.mid{background:linear-gradient(180deg, rgba(110,139,255,.34), rgba(110,139,255,.13));border-color:rgba(110,139,255,.46);}
+.tl-proj.adv{background:linear-gradient(180deg, rgba(255,184,107,.32), rgba(255,184,107,.12));border-color:rgba(255,184,107,.46);}
+.tl-proj b{font-size:15px;font-weight:800;letter-spacing:-.01em;}
+.tl-proj span{font-size:12px;color:var(--text-dim);font-variant-numeric:tabular-nums;}
+.tl-ticks{
+  margin-top:10px; display:flex; justify-content:space-between;
+  font-size:12px; color:var(--text-mute); font-variant-numeric:tabular-nums; letter-spacing:.04em;
+}
+
+/* ============================================================
+   CH.03 — ACCUMULATION STACK
+   ============================================================ */
+.acc{margin-top:30px; flex:1; display:flex; align-items:flex-end; gap:10px;}
+.acc-col{flex:1; display:flex; flex-direction:column; align-items:center; gap:9px;}
+.acc-bars{width:100%; display:flex; flex-direction:column-reverse; gap:4px;}
+.acc-b{
+  height:17px; border-radius:5px;
+  background:linear-gradient(90deg, rgba(110,139,255,.75), rgba(110,139,255,.4));
+}
+.acc-col:last-child .acc-b{background:linear-gradient(90deg, rgba(79,216,196,.85), rgba(79,216,196,.45));}
+.acc-lb{font-size:12.5px;font-weight:700;color:var(--text-dim);text-align:center;line-height:1.35;}
+.acc-col:last-child .acc-lb{color:var(--accent-2);font-weight:800;}
+
+/* ============================================================
+   CH.03 — TEAM PROJECTS
+   ============================================================ */
+.proj-grid{
+  margin-top:28px; flex:1;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:16px;
+}
+.proj-card{
+  background:linear-gradient(180deg, var(--surface), rgba(20,26,38,.5));
+  border:1px solid var(--line); border-radius:20px;
+  padding:24px 24px; display:flex; flex-direction:column; gap:12px;
+}
+.proj-card.adv{border-color:rgba(255,184,107,.32);}
+.proj-head{display:flex; align-items:baseline; gap:10px;}
+.proj-head h3{font-size:24px;font-weight:800;letter-spacing:-.02em;}
+.proj-head .pw{
+  font-size:12.5px;font-weight:700;color:var(--text-mute);
+  border:1px solid var(--line-strong); border-radius:999px; padding:4px 10px;
+  white-space:nowrap; font-variant-numeric:tabular-nums;
+}
+.proj-goal{
+  font-size:13px;font-weight:800;letter-spacing:.05em;color:var(--accent-2);
+}
+.proj-card.adv .proj-goal{color:var(--accent-warm);}
+.proj-card p{font-size:14.5px;line-height:1.6;color:var(--text-dim);}
+.proj-card p b{color:var(--text);font-weight:700;}
+
+/* ============================================================
+   CH.03 — PLUS ALPHA chips
+   ============================================================ */
+.alpha-chips{
+  margin-top:18px; display:flex; flex-wrap:wrap; gap:10px;
+}
+.alpha-chip{
+  font-size:14.5px; font-weight:600; color:var(--text-dim);
+  background:rgba(110,139,255,.09); border:1px solid rgba(110,139,255,.26);
+  border-radius:999px; padding:10px 18px;
+}
+.alpha-chip b{color:var(--accent-soft);font-weight:800;}
+
+/* ============================================================
+   CH.03 — AFTER LIST (numbered)
+   ============================================================ */
+.num-list{margin-top:26px; flex:1; display:flex; flex-direction:column; gap:12px; justify-content:center;}
+.num-row{
+  display:grid; grid-template-columns:38px 1fr; gap:20px; align-items:center;
+  background:var(--surface); border:1px solid var(--line); border-radius:16px;
+  padding:19px 24px;
+}
+.num-row .nr-n{
+  width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
+  background:rgba(110,139,255,.16); color:var(--accent-soft);
+  font-size:14px;font-weight:800;
+}
+.num-row h3{font-size:19.5px;font-weight:700;letter-spacing:-.015em;}
+.num-row p{margin-top:5px;font-size:14.5px;line-height:1.58;color:var(--text-dim);}
+.num-row p b{color:var(--text);font-weight:700;}
+
+/* ============================================================
+   CH.03 — AHEAD (progress vs baseline)
+   ============================================================ */
+.ahead-wrap{margin-top:22px; flex:1; display:flex; align-items:center;}
+.ahead-wrap svg{width:100%; height:auto; max-height:330px;}
+.ah-base{stroke:rgba(255,255,255,.22); stroke-width:2; stroke-dasharray:7 7; fill:none;}
+.ah-path{stroke:url(#ahg); stroke-width:3.2; fill:none; stroke-linecap:round;}
+.ah-dot{fill:#0D1119; stroke:url(#ahg); stroke-width:3;}
+.ah-dot.goal{fill:#6E8BFF; stroke:#A5B8FF; stroke-width:3;}
+.ah-lb{font-size:14px; font-weight:700; fill:var(--text-dim);}
+.ah-lb.goal{fill:#fff; font-weight:800; font-size:16px;}
+.ah-mute{font-size:13px; font-weight:600; fill:var(--text-mute);}
+.ah-gap{stroke:rgba(255,184,107,.55); stroke-width:1.6; stroke-dasharray:4 4;}
+.ah-gaplb{font-size:13.5px; font-weight:800; fill:var(--accent-warm);}
+
+/* ============================================================
+   CH.04 — CLAIM BOX
+   ============================================================ */
+.claim{
+  margin-top:26px;
+  background:linear-gradient(160deg, rgba(110,139,255,.16), rgba(20,26,38,.5));
+  border:1px solid rgba(110,139,255,.34); border-radius:20px;
+  padding:26px 30px;
+}
+.claim p{font-size:21px; line-height:1.6; font-weight:600; color:var(--text);}
+.claim p b{color:var(--accent-soft); font-weight:800;}
+
+/* ============================================================
+   CH.04 — TIME COMPARE chips
+   ============================================================ */
+.cmp-chips{display:flex; gap:11px; flex-wrap:wrap; margin-top:4px;}
+.cmp-chip{
+  font-size:16px; font-weight:700; color:var(--accent-soft);
+  background:rgba(110,139,255,.13); border:1px solid rgba(110,139,255,.32);
+  border-radius:999px; padding:9px 18px;
+}
+
+/* ============================================================
+   CH.04 — FINAL SLIDE
+   ============================================================ */
+.final-slide{justify-content:center;}
+.final-eye{
+  display:inline-flex; align-items:center; gap:12px;
+  font-size:14px; font-weight:800; letter-spacing:.14em; color:var(--accent-2);
+}
+.final-eye::before{
+  content:""; width:34px; height:2px; border-radius:2px;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+}
+.final-title{
+  margin-top:24px;
+  font-size:52px; font-weight:800; line-height:1.24; letter-spacing:-.032em;
+}
+.final-body{
+  margin-top:28px; display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:1000px;
+}
+.final-card{
+  background:rgba(255,255,255,.035); border:1px solid var(--line);
+  border-radius:16px; padding:20px 24px;
+}
+.final-card p{font-size:16px; line-height:1.65; color:var(--text-dim);}
+.final-card p b{color:var(--text); font-weight:700;}
+.final-sign{
+  margin-top:34px; padding-top:24px; border-top:1px solid var(--line);
+  font-size:26px; font-weight:800; letter-spacing:-.02em;
+}
+.final-sign .accent{color:var(--accent-soft);}
+
+/* ============================================================
+   SLIDE · INTERVIEW (outro link)
+   ============================================================ */
+.itv-slide{justify-content:center;}
+.itv-grid{
+  display:grid; grid-template-columns:1fr 520px; gap:56px; align-items:center;
+}
+.itv-title{
+  margin-top:22px;
+  font-size:46px; font-weight:800; line-height:1.24; letter-spacing:-.03em;
+}
+.itv-link{
+  margin-top:30px; display:inline-flex; align-items:center; gap:12px;
+  background:rgba(110,139,255,.12); border:1px solid rgba(110,139,255,.38);
+  border-radius:14px; padding:16px 22px;
+  font-size:19px; font-weight:700; color:var(--accent-soft);
+  letter-spacing:.01em; word-break:break-all;
+  text-decoration:none; transition:background .25s var(--ease), border-color .25s var(--ease);
+}
+.itv-link:hover{background:rgba(110,139,255,.2); border-color:rgba(110,139,255,.6);}
+.itv-link .lk{
+  width:26px;height:26px;border-radius:8px;flex:0 0 auto;display:grid;place-items:center;
+  background:rgba(110,139,255,.3); color:#fff; font-size:13px;
+}
+.itv-shot img{
+  width:100%; border-radius:18px; display:block;
+  border:1px solid var(--line-strong);
+  box-shadow:0 22px 60px rgba(0,0,0,.55);
+}
+
+/* ============================================================
+   SLIDE · Q&A (closing)
+   ============================================================ */
+.qa-slide{justify-content:center;}
+.qa-body{display:flex; flex-direction:column;}
+.qa-title{
+  margin-top:18px;
+  font-size:56px; font-weight:800; line-height:1.14; letter-spacing:-.034em;
+}
+.qa-slide .lead{font-size:19px; line-height:1.66;}
+
+/* ============================================================
+   SLIDE · THREE PILLARS
+   ============================================================ */
+.pillars{
+  margin-top:32px; flex:1;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:18px;
+}
+.pillar{
+  background:linear-gradient(180deg, var(--surface), rgba(20,26,38,.5));
+  border:1px solid var(--line); border-radius:20px;
+  padding:28px 25px; display:flex; flex-direction:column; gap:13px;
+  position:relative; overflow:hidden;
+}
+.pillar::after{
+  content:""; position:absolute; right:-34px; bottom:-34px; width:130px;height:130px;border-radius:50%;
+  background:radial-gradient(circle, rgba(110,139,255,.16), transparent 70%);
+  pointer-events:none;
+}
+.pillar .pnum{
+  font-size:12px; font-weight:800; color:var(--text-mute); letter-spacing:.12em;
+}
+.pillar .en{display:block;font-size:12px;font-weight:700;color:var(--accent-2);letter-spacing:.1em;margin-bottom:6px;}
+.pillar h3{font-size:28px;font-weight:800;letter-spacing:-.02em; position:relative;}
+.pillar p{font-size:15px;line-height:1.62;color:var(--text-dim); position:relative;}
+
+/* ============================================================
+   SLIDE · SCALE (case cards, before/after)
+   ============================================================ */
+.scale-grid{
+  margin-top:30px; flex:1;
+  display:grid; grid-template-columns:1fr 1fr; gap:18px;
+}
+.case-card{
+  background:var(--surface); border:1px solid var(--line); border-radius:18px;
+  padding:24px 26px 22px; display:flex; flex-direction:column; gap:18px;
+  justify-content:center;
+}
+.case-card .ctitle{font-size:20px;font-weight:700;letter-spacing:-.01em;}
+.case-flow{display:flex; flex-direction:column; gap:9px;}
+.case-step{
+  font-size:14.5px; line-height:1.65; color:var(--text-dim);
+}
+.case-step .tag2{
+  display:inline-block; vertical-align:middle; margin-right:9px;
+  font-size:11px; font-weight:800; letter-spacing:.05em;
+  padding:3px 9px; border-radius:999px;
+}
+.case-step.before .tag2{background:rgba(255,255,255,.06); color:var(--text-mute);}
+.case-step.after .tag2{background:rgba(255,107,107,.14); color:#FF9B9B; border:1px solid rgba(255,107,107,.28);}
+.case-step b{color:var(--text);font-weight:700;}
+
+/* ============================================================
+   SLIDE · RIPPLE (scalability blast radius)
+   ============================================================ */
+.ripple-origin{
+  margin-top:30px;
+  display:inline-flex; align-items:center; gap:12px;
+  background:linear-gradient(160deg, rgba(110,139,255,.16), rgba(20,26,38,.5));
+  border:1px solid rgba(110,139,255,.34); border-radius:14px;
+  padding:14px 22px; font-size:18px; font-weight:700;
+}
+.ripple-origin .dot2{
+  width:9px;height:9px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 0 6px rgba(110,139,255,.18);
+}
+.ripple-flow{margin-top:22px; display:flex; flex-direction:column; gap:0;}
+.ripple-step{
+  display:grid; grid-template-columns:112px 1fr; gap:22px; align-items:center;
+  padding:15px 0; border-top:1px dashed var(--line);
+}
+.ripple-step:first-child{border-top:0;}
+.ripple-step .rlabel{font-size:12.5px;font-weight:800;letter-spacing:.09em;color:var(--text-mute);}
+.ripple-step .rbar-wrap{display:flex; align-items:center; gap:18px;}
+.ripple-step .rbar{
+  height:7px; border-radius:999px; flex:0 0 auto;
+  background:linear-gradient(90deg, var(--accent), var(--accent-2));
+  opacity:.85;
+}
+.ripple-step .rtext{font-size:15px; color:var(--text-dim); line-height:1.5;}
+.ripple-step .rtext b{color:var(--text);font-weight:700;}
+
+/* blast radius — two column with screenshot */
+.blast-cols{
+  margin-top:26px; flex:1;
+  display:grid; grid-template-columns:1fr 300px; gap:34px; align-items:center;
+}
+.blast-left{display:flex; flex-direction:column;}
+.blast-left .ripple-origin{margin-top:0;}
+.blast-left .ripple-flow{margin-top:18px;}
+.blast-left .bridge-line{margin-top:18px; padding-top:16px; font-size:18px;}
+.blast-shot{display:flex; flex-direction:column; gap:12px; align-items:center;}
+.blast-shot img{
+  width:100%; border-radius:14px; display:block;
+  border:1px solid var(--line-strong);
+  box-shadow:0 18px 46px rgba(0,0,0,.55);
+}
+.blast-shot figcaption{
+  font-size:13px; color:var(--text-mute); text-align:center; line-height:1.5;
+}
+.blast-shot figcaption b{color:var(--accent-soft); font-weight:700;}
+
+/* ============================================================
+   SLIDE · STORY (reliability, personal case + closing line)
+   ============================================================ */
+.story-card{
+  margin-top:28px;
+  background:linear-gradient(160deg, var(--surface), rgba(20,26,38,.4));
+  border:1px solid var(--line); border-radius:20px;
+  padding:30px 34px 26px; position:relative;
+}
+.story-card .qmark{
+  position:absolute; top:14px; left:26px; font-size:56px; font-weight:800;
+  color:rgba(110,139,255,.16); line-height:1; font-family:Georgia,serif;
+}
+.story-card p{
+  position:relative; font-size:18px; line-height:1.72; color:var(--text);
+  padding-left:2px; max-width:980px;
+}
+.story-card .attr{
+  position:relative; margin-top:16px; font-size:13.5px; color:var(--text-mute); font-weight:600;
+}
+.story-close{margin-top:26px; text-align:center;}
+.story-close .big{font-size:30px; font-weight:800; letter-spacing:-.02em; line-height:1.4;}
+.story-close .big .accent{color:var(--accent-soft);}
+
+/* ============================================================
+   NAVIGATION UI
+   ============================================================ */
+#progress{
+  position:fixed; top:0; left:0; height:2px; z-index:50;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  transition:width .62s var(--ease);
+}
+#nav{
+  position:fixed; bottom:22px; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:14px; z-index:50;
+  background:rgba(13,17,25,.82); backdrop-filter:blur(14px);
+  border:1px solid var(--line); border-radius:999px;
+  padding:8px 10px;
+  opacity:.28; transition:opacity .3s var(--ease);
+}
+#nav:hover{opacity:1;}
+/* 임베드(iframe) — 키보드가 안 잡힐 수 있으므로 컨트롤을 항상 보이게 */
+body.is-embed #nav{opacity:.8;}
+body.is-embed #stage{box-shadow:none;}
+#nav button{
+  width:32px;height:32px;border-radius:50%;
+  background:transparent;border:0;color:var(--text-dim);
+  font-size:15px;cursor:pointer;display:grid;place-items:center;
+  transition:background .2s, color .2s;
+}
+#nav button:hover{background:var(--surface-2);color:var(--text);}
+#nav button:disabled{opacity:.25;cursor:default;}
+#dots{display:flex;gap:7px;padding:0 4px;}
+#dots i{
+  width:7px;height:7px;border-radius:50%;background:var(--line-strong);
+  cursor:pointer;transition:all .3s var(--ease);
+}
+#dots i.on{background:var(--accent);width:20px;border-radius:999px;}
+#counter{
+  font-size:12px;color:var(--text-mute);font-variant-numeric:tabular-nums;
+  padding:0 8px;letter-spacing:.08em;white-space:nowrap;
+}
+#dots{flex-wrap:nowrap;}
+#dots i{flex:0 0 auto;}
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<div id="viewport">
+  <div id="stage">
+    <div id="track">
+
+      <!-- ═══════════════ SLIDE 1 · COVER ═══════════════ -->
+      <section class="slide cover" data-title="표지">
+        <div class="orb"></div>
+
+        <div class="eyebrow" data-anim style="--d:0">Codeit Sprint · Spring Backend 17기</div>
+
+        <h1 class="title en" data-anim style="--d:1">
+          Road to<br /><span style="color:var(--accent-soft)">Backend Engineer</span>
+        </h1>
+
+        <div class="title-kr" data-anim style="--d:2">
+          시스템을 <span class="mark">책임지는</span> 사람이 되기까지
+        </div>
+
+        <p class="lead sub" data-anim style="--d:3">
+          시스템을 책임지는 엔지니어가 되기 위한 7개월.<br />
+          그 출발선에서 갖춰야 할 마인드셋을 이야기합니다.
+        </p>
+
+        <div class="meta" data-anim style="--d:4">
+          <div class="who">
+            하규태
+            <span>Backend Engineer · Codeit Sprint Mentor</span>
+          </div>
+          <div class="when">
+            <b>2026. 11. 06. (금) 16:00</b><br />
+            강연 35분 + Q&amp;A 10분
+          </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>01</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 2 · INTRO DIVIDER ═══════════════ -->
+      <section class="slide chapter-divider" data-title="INTRO 표지">
+        <div class="cd-ghost">00</div>
+
+        <div class="cd-label" data-anim style="--d:0">Introduction</div>
+
+        <h1 class="cd-title" data-anim style="--d:1">
+          하규태
+        </h1>
+
+        <p class="cd-desc" data-anim style="--d:2">
+          앞으로 드릴 이야기가 <span class="mark">어떤 경험에서 나온 것인지</span>, 먼저 짧게 소개하겠습니다.
+        </p>
+
+        <div class="cd-topics" data-anim style="--d:3">
+          <span class="cd-topic">겪어온 회사의 크기</span>
+          <span class="cd-topic">파고든 기술 도메인</span>
+          <span class="cd-topic">코드잇과의 인연</span>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>02</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 3 · INTRO — CAREER SCALE ═══════════════ -->
+      <section class="slide" data-title="소개 · 커리어">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">INTRO</span><span class="sep">·</span> 하규태
+          <span class="step">01 / 03</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          다양한 <span style="color:var(--accent-soft)">크기</span>의 회사를 거쳤습니다
+        </h2>
+
+        <p class="lead" data-anim style="--d:2;max-width:820px;margin-top:12px;font-size:19px">
+          대기업부터 Pre-A 스타트업까지. 같은 기능도 <span class="mark">회사 크기가 바뀌면 전혀 다른 문제</span>가 됩니다.
+        </p>
+
+        <div class="career-track">
+          <div class="ct-col mute" data-anim style="--d:3">
+            <div class="ct-bar-box"><div class="ct-bar" style="height:58px"></div></div>
+            <div class="ct-stage">로봇 · 중견</div>
+            <div class="ct-name">유진로봇</div>
+            <div class="ct-yr">2017–2019</div>
+          </div>
+          <div class="ct-col" data-anim style="--d:4">
+            <div class="ct-bar-box"><div class="ct-bar" style="height:170px"></div></div>
+            <div class="ct-stage">대기업</div>
+            <div class="ct-name">카카오</div>
+            <div class="ct-yr">2019–2020</div>
+          </div>
+          <div class="ct-col" data-anim style="--d:5">
+            <div class="ct-bar-box"><div class="ct-bar" style="height:128px"></div></div>
+            <div class="ct-stage">유니콘</div>
+            <div class="ct-name">야놀자</div>
+            <div class="ct-yr">2021–2022</div>
+          </div>
+          <div class="ct-col teal" data-anim style="--d:6">
+            <div class="ct-bar-box"><div class="ct-bar" style="height:70px"></div></div>
+            <div class="ct-stage">시리즈 B</div>
+            <div class="ct-name">라포랩스</div>
+            <div class="ct-yr">2022</div>
+          </div>
+          <div class="ct-col teal" data-anim style="--d:7">
+            <div class="ct-bar-box"><div class="ct-bar" style="height:94px"></div></div>
+            <div class="ct-stage">시리즈 C</div>
+            <div class="ct-name">캐치테이블</div>
+            <div class="ct-yr">2023–2024</div>
+          </div>
+          <div class="ct-col warm" data-anim style="--d:8">
+            <div class="ct-bar-box"><div class="ct-bar" style="height:38px"></div></div>
+            <div class="ct-stage">Pre-A</div>
+            <div class="ct-name">콕스웨이브</div>
+            <div class="ct-yr">2024–2025</div>
+          </div>
+        </div>
+
+        <div class="bridge-line" data-anim style="--d:9">
+          그래서 <b>규모가 시스템을 어떻게 바꾸는지</b>, 서로 다른 규모의 현장에서 직접 지켜봤습니다.
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>03</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 3 · INTRO — ONE DOMAIN ═══════════════ -->
+      <section class="slide" data-title="소개 · 검색 한 우물">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">INTRO</span><span class="sep">·</span> 하규태
+          <span class="step">02 / 03</span>
+        </div>
+
+        <div class="intro-body">
+        <h2 class="ch-title" data-anim style="--d:1;margin-top:0">
+          5년 넘게, <span style="color:var(--accent-soft)">검색 백엔드</span> 하나를 팠습니다
+        </h2>
+
+        <div class="domain-flow five" data-anim style="--d:2">
+          <div class="df-item">
+            <div class="df-yr">2019</div>
+            <div class="df-kind">지도 · 버스</div>
+            <div class="df-co">카카오</div>
+          </div>
+          <div class="df-item">
+            <div class="df-yr">2021</div>
+            <div class="df-kind">숙소</div>
+            <div class="df-co">야놀자</div>
+          </div>
+          <div class="df-item">
+            <div class="df-yr">2022</div>
+            <div class="df-kind">패션 커머스</div>
+            <div class="df-co">퀸잇</div>
+          </div>
+          <div class="df-item">
+            <div class="df-yr">2023</div>
+            <div class="df-kind">맛집</div>
+            <div class="df-co">캐치테이블</div>
+          </div>
+          <div class="df-item last">
+            <div class="df-yr">2024</div>
+            <div class="df-kind">AI 대화</div>
+            <div class="df-co">AlignAI</div>
+          </div>
+        </div>
+
+        <p class="lead" data-anim style="--d:3;margin-top:22px;font-size:17.5px">
+          비즈니스 도메인은 매번 달랐지만, 문제는 같았습니다 —
+          <span class="mark">수많은 데이터에서, 수많은 사람에게, 빠르고 정확하게</span>.
+        </p>
+
+        <div class="origin-note" data-anim style="--d:4">
+          <div class="on-tag">한 우물</div>
+          <p>
+            검색은 <b>트래픽이 가장 많이 몰리는 기술 도메인</b> 중 하나입니다.
+            회사를 옮기면서도 이 도메인 하나를 계속 파고들었고, 같은 문제를 <b>매번 다른 규모에서 다시</b> 만났습니다.
+            그때마다 기술에 대한 이해가 한 겹씩 깊어졌습니다.
+          </p>
+        </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>04</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 4 · INTRO — CODEIT COHORTS ═══════════════ -->
+      <section class="slide" data-title="소개 · 코드잇">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">INTRO</span><span class="sep">·</span> 하규태
+          <span class="step">03 / 03</span>
+        </div>
+
+        <div class="intro-body">
+          <h2 class="ch-title" data-anim style="--d:1;margin-top:0">
+            이 과정을, <span style="color:var(--accent-soft)">여섯 기수</span>를 함께해 왔습니다
+          </h2>
+
+          <p class="lead" data-anim style="--d:2;max-width:840px;margin-top:12px;font-size:18px">
+            코드잇 스프린트 <b style="color:var(--text);font-weight:700">스프링 백엔드</b> 트랙에서
+            주강사와 멘토로 참여했습니다.
+          </p>
+
+          <div class="cohort-grid" data-anim style="--d:3">
+            <div class="cohort-block">
+              <div class="cb-role">주강사</div>
+              <div class="cb-badges">
+                <span class="cb-badge">1기</span>
+                <span class="cb-badge">2기</span>
+                <span class="cb-badge">6기</span>
+              </div>
+              <p>커리큘럼 전반을 직접 강의했습니다.</p>
+            </div>
+
+            <div class="cohort-block">
+              <div class="cb-role">멘토</div>
+              <div class="cb-badges">
+                <span class="cb-badge teal">8기</span>
+                <span class="cb-badge teal">9기</span>
+                <span class="cb-badge teal">12기</span>
+              </div>
+              <p>수강생 곁에서 코드와 진로를 함께 고민했습니다.</p>
+            </div>
+
+            <div class="cohort-block now">
+              <div class="cb-role now">그리고 오늘</div>
+              <div class="cb-badges">
+                <span class="cb-badge big">17기</span>
+              </div>
+              <p>개강 특별 강사로 이 자리에 섰습니다.</p>
+            </div>
+          </div>
+
+          <div class="bridge-line" data-anim style="--d:4">
+            그래서 이 7개월 동안 <b>어떤 사람이 끝까지 가는지</b>도, 여섯 번 지켜봤습니다.
+          </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>05</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 5 · AGENDA ═══════════════ -->
+      <section class="slide" data-title="아젠다">
+        <div class="agenda-head">
+          <div>
+            <div class="eyebrow" data-anim style="--d:0">Agenda</div>
+            <h2 class="stitle" data-anim style="--d:1">오늘 45분은<br />이렇게 진행합니다</h2>
+          </div>
+          <div class="budget" data-anim style="--d:2">
+            <b>45<span style="font-size:17px;font-weight:600;color:var(--text-mute)">min</span></b>
+            강연 35 · Q&amp;A 10
+          </div>
+        </div>
+
+        <div class="agenda-list">
+          <div class="agenda-item" data-anim style="--d:3">
+            <div class="num">01</div>
+            <div class="body">
+              <h3>백엔드 개발자란 무엇인가</h3>
+              <p>코드를 쓰는 사람과 시스템을 책임지는 사람의 차이</p>
+            </div>
+          </div>
+
+          <div class="agenda-item" data-anim style="--d:4">
+            <div class="num">02</div>
+            <div class="body">
+              <h3>스프링 백엔드 학습법</h3>
+              <p>무엇을, 어떤 순서로, 어디까지 파고들 것인가</p>
+            </div>
+          </div>
+
+          <div class="agenda-item" data-anim style="--d:5">
+            <div class="num">03</div>
+            <div class="body">
+              <h3>부트캠프 활용법</h3>
+              <p>7개월을 자산으로 바꾸는 구체적인 방법</p>
+            </div>
+          </div>
+
+          <div class="agenda-item" data-anim style="--d:6">
+            <div class="num">04</div>
+            <div class="body">
+              <h3>참여 마인드셋</h3>
+              <p>끝까지 가는 사람들의 공통점</p>
+            </div>
+          </div>
+
+          <div class="agenda-item qa" data-anim style="--d:7">
+            <div class="num">Q&amp;A</div>
+            <div class="body">
+              <h3>자유 질의</h3>
+              <p>궁금한 것은 무엇이든 물어보세요</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>06</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 6 · CH.01 DIVIDER ═══════════════ -->
+      <section class="slide chapter-divider" data-title="CH.01 표지">
+        <div class="cd-ghost">01</div>
+
+        <div class="cd-label" data-anim style="--d:0">Chapter 01</div>
+
+        <h1 class="cd-title" data-anim style="--d:1">
+          백엔드 개발자란<br />무엇인가
+        </h1>
+
+        <p class="cd-desc" data-anim style="--d:2">
+          코드를 쓰는 사람과, <span class="mark">시스템을 책임지는 사람</span>의 차이.
+        </p>
+
+        <div class="cd-topics" data-anim style="--d:3">
+          <span class="cd-topic">정의</span>
+          <span class="cd-topic">규모</span>
+          <span class="cd-topic">파급력</span>
+          <span class="cd-topic">신뢰성</span>
+          <span class="cd-topic">시스템적 사고</span>
+          <span class="cd-topic">진입장벽과 AI</span>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>07</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 7 · CH.01 DEFINITION ═══════════════ -->
+      <section class="slide" data-title="정의">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.01</span><span class="sep">·</span> 백엔드 개발자란 무엇인가
+          <span class="step">01 / 08</span>
+        </div>
+
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:30px;padding-bottom:24px">
+          <h2 class="ch-title" data-anim style="--d:1;margin-top:0">
+            시스템을 <span style="color:var(--accent-soft)">설계</span>하고<br />
+            <span class="mark">책임</span>지는 사람
+          </h2>
+
+          <p class="lead" data-anim style="--d:2;max-width:640px">
+            다른 엔지니어링 직군과 가장 크게 다른 점도 바로 여기에 있습니다.
+          </p>
+
+          <div class="def-contrast" data-anim style="--d:3">
+            <div class="def-card">
+              <div class="role">Frontend · App</div>
+              <p>사용자가 보는 화면과 경험을 완성한다</p>
+            </div>
+            <div class="def-arrow">→</div>
+            <div class="def-card hi">
+              <div class="role">Backend</div>
+              <p>보이지 않는 곳에서, 시스템이 멈추지 않고 돌아가게 만든다</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>08</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 5 · CH.01 THREE PILLARS ═══════════════ -->
+      <section class="slide" data-title="세 가지 책임">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.01</span><span class="sep">·</span> 백엔드 개발자란 무엇인가
+          <span class="step">02 / 08</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          그럼, 무엇을 책임지는 걸까
+        </h2>
+
+        <div class="pillars">
+          <div class="pillar" data-anim style="--d:2">
+            <div class="pnum">01</div>
+            <h3><span class="en">SCALE</span>규모</h3>
+            <p>한 명이 아니라, <b style="color:var(--text)">수만 명을 동시에</b> 상대합니다.</p>
+          </div>
+          <div class="pillar" data-anim style="--d:3">
+            <div class="pnum">02</div>
+            <h3><span class="en">BLAST RADIUS</span>파급력</h3>
+            <p>하나를 바꾸면, <b style="color:var(--text)">거기에 연결된 모든 것이</b> 영향을 받습니다.</p>
+          </div>
+          <div class="pillar" data-anim style="--d:4">
+            <div class="pnum">03</div>
+            <h3><span class="en">RELIABILITY</span>신뢰성</h3>
+            <p>멈추는 순간, <b style="color:var(--text)">돈과 신뢰가</b> 함께 사라집니다.</p>
+          </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>09</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 6 · CH.01 SCALE ═══════════════ -->
+      <section class="slide" data-title="규모">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.01</span><span class="sep">·</span> 01 규모
+          <span class="step">03 / 08</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          사람이 많아지는 순간,<br />없던 문제가 생깁니다
+        </h2>
+
+        <div class="scale-grid">
+          <div class="case-card" data-anim style="--d:2">
+            <div class="ctitle">선착순 이벤트</div>
+            <div class="case-flow">
+              <div class="case-step before"><span class="tag2">적을 때</span>1명이 누르면 재고 확인 후 차감 — <b>문제없음</b></div>
+              <div class="case-step after"><span class="tag2">많아지면</span>수만 명이 동시에 몰리면 재고가 <b>마이너스</b>가 되거나, 정원 100명에 <b>300명이 당첨</b></div>
+            </div>
+          </div>
+          <div class="case-card" data-anim style="--d:3">
+            <div class="ctitle">게시글 목록 조회 (N+1)</div>
+            <div class="case-flow">
+              <div class="case-step before"><span class="tag2">적을 때</span>댓글 수를 세는 쿼리가 반복문 안에 있어도 <b>티가 안 남</b></div>
+              <div class="case-step after"><span class="tag2">많아지면</span>쿼리가 <b>수천 번씩</b> 실행되어 페이지 하나 여는 데 몇 초씩 걸림</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>10</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 7 · CH.01 BLAST RADIUS ═══════════════ -->
+      <section class="slide" data-title="파급력">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.01</span><span class="sep">·</span> 02 파급력
+          <span class="step">04 / 08</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          하나의 변경이,<br />연결된 모든 곳으로 번집니다
+        </h2>
+
+        <div class="blast-cols">
+          <div class="blast-left">
+            <div class="ripple-origin" data-anim style="--d:2">
+              <span class="dot2"></span> 카카오 <b style="color:var(--accent-soft)">주소 검색 API</b> — 담당자가 실수로 장애를 낸다면?
+            </div>
+
+            <div class="ripple-flow" data-anim style="--d:3">
+              <div class="ripple-step">
+                <div class="rlabel">KAKAO</div>
+                <div class="rbar-wrap">
+                  <div class="rbar" style="width:56px"></div>
+                  <div class="rtext"><b>카카오 · 카카오맵 · 카카오내비 · 카카오T</b>의 주소 찾기가 먼저 멈춥니다</div>
+                </div>
+              </div>
+              <div class="ripple-step">
+                <div class="rlabel">RELATED SERVICES</div>
+                <div class="rbar-wrap">
+                  <div class="rbar" style="width:150px"></div>
+                  <div class="rtext"><b>정부 기관과 국내 수많은 서비스</b>의 주소 찾기가 함께 멈춥니다</div>
+                </div>
+              </div>
+              <div class="ripple-step">
+                <div class="rlabel">SOCIETY</div>
+                <div class="rbar-wrap">
+                  <div class="rbar" style="width:300px"></div>
+                  <div class="rtext">주문도, 배송도, 가입도 멈춥니다.
+                    그래서 이런 장애는 단순한 버그가 아니라 <b>뉴스</b>가 됩니다</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bridge-line" data-anim style="--d:5">
+              내 손이 닿는 범위보다, <b>내 코드가 닿는 범위</b>가 훨씬 넓습니다.
+            </div>
+          </div>
+
+          <figure class="blast-shot" data-anim style="--d:4">
+            <img src="data:image/jpeg;base64,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" alt="카카오 우편번호 찾기 화면" />
+            <figcaption><b>수많은 서비스가 주소 입력에 쓰고 있는</b> 바로 그 화면입니다</figcaption>
+          </figure>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>11</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 8 · CH.01 RELIABILITY ═══════════════ -->
+      <section class="slide" data-title="신뢰성">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.01</span><span class="sep">·</span> 03 신뢰성
+          <span class="step">05 / 08</span>
+        </div>
+
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:8px;padding-bottom:24px">
+          <h2 class="ch-title" data-anim style="--d:1;margin-top:0">
+            장애는 기술 문제로<br />끝나지 않습니다
+          </h2>
+
+          <div class="story-card" data-anim style="--d:2">
+            <div class="qmark">&ldquo;</div>
+            <p>
+              야놀자에서 숙소 검색·리스팅 서비스를 담당하던 시절, 제가 낸 장애로
+              <b style="color:var(--accent-warm)">돈을 내고 상위 노출 계약을 맺은 전국의 숙박업체들</b>이
+              목록에서 통째로 사라진 적이 있습니다.
+              그날의 매출과 브랜드 신뢰가 함께 날아갔고, 적지 않은 금액을 보상해야 했습니다.
+            </p>
+            <div class="attr">— 하규태, 야놀자 재직 시절</div>
+          </div>
+
+          <div class="story-close" data-anim style="--d:3">
+            <div class="big">서버의 <span class="accent">가동률</span>이 곧 회사의 <span class="accent">신용</span>입니다</div>
+          </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>12</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 9 · CH.01 SYNTHESIS (why system) ═══════════════ -->
+      <section class="slide" data-title="그래서 왜 시스템인가">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.01</span><span class="sep">·</span> 백엔드 개발자란 무엇인가
+          <span class="step">06 / 08</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          그래서 감이 아니라,<br /><span style="color:var(--accent-soft)">시스템</span>이어야 합니다
+        </h2>
+
+        <p class="lead" data-anim style="--d:2;max-width:760px;margin-top:14px">
+          셋 다 <span class="mark">터지고 나서 대응하면 이미 늦는</span> 문제입니다.
+        </p>
+
+        <div class="recap-row" data-anim style="--d:3">
+          <div class="recap-chip">
+            <div class="rc-tag">01 · Scale</div>
+            <div class="rc-kr">규모</div>
+            <p class="rc-prob">사용자가 몰리면 서버가 버티지 못한다</p>
+            <p class="rc-ans"><b>→ 몰릴 것을 전제로</b> 구조를 미리 짠다</p>
+          </div>
+          <div class="recap-chip">
+            <div class="rc-tag">02 · Blast Radius</div>
+            <div class="rc-kr">파급력</div>
+            <p class="rc-prob">하나를 바꾸면 연결된 곳까지 장애가 번진다</p>
+            <p class="rc-ans"><b>→ 영향이 번지지 않도록</b> 경계를 나눠 둔다</p>
+          </div>
+          <div class="recap-chip">
+            <div class="rc-tag">03 · Reliability</div>
+            <div class="rc-kr">신뢰성</div>
+            <p class="rc-prob">서비스가 멈추면 매출과 신용을 잃는다</p>
+            <p class="rc-ans"><b>→ 멈추지 않도록</b> 안전장치를 마련해 둔다</p>
+          </div>
+        </div>
+
+        <div class="bridge-line" data-anim style="--d:4">
+          그때그때 감으로 대응하는 게 아니라, <b>미리 구조로</b> 대비하는 것 — 이것이 <b>시스템적 사고</b>입니다.
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>13</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 10 · CH.01 WHAT TO BUILD ═══════════════ -->
+      <section class="slide" data-title="무엇을 쌓아야 하는가">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.01</span><span class="sep">·</span> 백엔드 개발자란 무엇인가
+          <span class="step">07 / 08</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          그래서, 무엇을 쌓아야 할까
+        </h2>
+
+        <p class="lead" data-anim style="--d:2;max-width:800px;margin-top:12px">
+          세 가지 책임에는 각각 <span class="mark">배워야 할 것</span>과 <span class="mark">겪어야 할 것</span>이 있습니다.
+        </p>
+
+        <div class="learn-grid" data-anim style="--d:3">
+          <div class="learn-col">
+            <div class="lc-head"><span class="lc-tag">01 · 규모</span></div>
+            <div class="lc-block">
+              <div class="lc-label">배울 것</div>
+              <p>동시성 제어 · 인덱스와 쿼리 · 캐시</p>
+            </div>
+            <div class="lc-block exp">
+              <div class="lc-label">겪을 것</div>
+              <p><b>트래픽을 직접 받아 봐야</b> 압니다</p>
+            </div>
+          </div>
+
+          <div class="learn-col">
+            <div class="lc-head"><span class="lc-tag">02 · 파급력</span></div>
+            <div class="lc-block">
+              <div class="lc-label">배울 것</div>
+              <p>계층 분리 · API 설계 · 테스트 코드</p>
+            </div>
+            <div class="lc-block exp">
+              <div class="lc-label">겪을 것</div>
+              <p>내가 고친 곳이 아닌 <b>엉뚱한 곳이 터져 봐야</b> 압니다</p>
+            </div>
+          </div>
+
+          <div class="learn-col">
+            <div class="lc-head"><span class="lc-tag">03 · 신뢰성</span></div>
+            <div class="lc-block">
+              <div class="lc-label">배울 것</div>
+              <p>트랜잭션 · 로깅과 모니터링 · 배포</p>
+            </div>
+            <div class="lc-block exp">
+              <div class="lc-label">겪을 것</div>
+              <p><b>장애를 직접 수습해 봐야</b> 압니다</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bridge-line" data-anim style="--d:4">
+          배울 것은 <b>강의</b>로 채울 수 있지만, 겪을 것은 <b>프로젝트</b>로만 채울 수 있습니다.
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>14</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 11 · CH.01 VALUE / CLOSE ═══════════════ -->
+      <section class="slide" data-title="그래서 가치 있다">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.01</span><span class="sep">·</span> 백엔드 개발자란 무엇인가
+          <span class="step">08 / 08</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          쉽지 않습니다.<br />그래서 <span style="color:var(--accent-soft)">가치 있습니다</span>
+        </h2>
+
+        <div class="value-grid" data-anim style="--d:2">
+          <div class="value-card">
+            <div class="vc-tag">진입장벽</div>
+            <h3>아무나 오래 버티지 못합니다</h3>
+            <p>배우는 데 시간이 걸리고, 겪어야만 늘기 때문입니다.
+               그 <b>시간이 곧 여러분의 해자</b>가 됩니다. 진입장벽은 남을 막는 벽이 아니라,
+               넘어온 사람을 지켜 주는 벽입니다.</p>
+          </div>
+          <div class="value-card ai">
+            <div class="vc-tag">AI 시대</div>
+            <h3>코드는 맡겨도, 책임은 못 맡깁니다</h3>
+            <p>AI는 코드를 대신 써 줍니다. 하지만 <b>이 설계가 맞는지 판단하고,
+               장애가 났을 때 책임지는 건 여전히 사람</b>입니다.
+               AI가 코드를 많이 쓸수록, 판단하고 책임질 사람의 몫은 오히려 커집니다.</p>
+          </div>
+        </div>
+
+        <div class="close-line" data-anim style="--d:3">
+          코드는 위임할 수 있어도, <span class="accent">책임은 위임할 수 없습니다</span>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>15</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 15 · CH.02 DIVIDER ═══════════════ -->
+      <section class="slide chapter-divider" data-title="CH.02 표지">
+        <div class="cd-ghost">02</div>
+
+        <div class="cd-label" data-anim style="--d:0">Chapter 02</div>
+
+        <h1 class="cd-title" data-anim style="--d:1">
+          스프링 백엔드<br />학습법
+        </h1>
+
+        <p class="cd-desc" data-anim style="--d:2">
+          무엇을 어디까지 파고들 것인가. 그리고 <span class="mark">스스로 찾아 이해하는 힘</span>을 어떻게 기르는가.
+        </p>
+
+        <div class="cd-topics" data-anim style="--d:3">
+          <span class="cd-topic">본질</span>
+          <span class="cd-topic">주도적 학습</span>
+          <span class="cd-topic">CS 병행</span>
+          <span class="cd-topic">AI 활용</span>
+          <span class="cd-topic">객체지향 설계</span>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>16</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 16 · CH.02 USED vs UNDERSTOOD ═══════════════ -->
+      <section class="slide" data-title="써봤다 vs 이해했다">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.02</span><span class="sep">·</span> 스프링 백엔드 학습법
+          <span class="step">01 / 07</span>
+        </div>
+
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:26px;padding-bottom:20px">
+          <h2 class="ch-title" data-anim style="--d:1;margin-top:0">
+            <span class="mark">'써봤다'</span>는 실력이 아닙니다
+          </h2>
+
+          <div class="value-grid" data-anim style="--d:2;margin-top:0">
+            <div class="value-card">
+              <div class="vc-tag">내비게이션을 따라가는 사람</div>
+              <h3>시키는 대로 가면 도착합니다</h3>
+              <p>튜토리얼을 따라 하면 화면이 뜹니다. 하지만 <b>길이 조금만 달라지면</b> 거기서 멈춥니다.
+                 왜 이 길인지 모르기 때문입니다.</p>
+            </div>
+            <div class="value-card ai">
+              <div class="vc-tag">지도를 읽는 사람</div>
+              <h3>처음 가는 길도 찾아냅니다</h3>
+              <p>왜 이 길인지 알기 때문에, <b>배운 적 없는 상황에서도</b> 스스로 길을 찾습니다.
+                 그래서 배운 것을 계속 넓혀 갈 수 있습니다.</p>
+            </div>
+          </div>
+
+          <div class="close-line" data-anim style="--d:3;margin-top:0;font-size:23px">
+            진짜 실력은 써본 목록이 아니라,
+            <span class="accent">직접 부딪히며 본질까지 파고든 경험</span>입니다
+          </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>17</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 15 · CH.02 THREE LENSES ═══════════════ -->
+      <section class="slide" data-title="본질의 세 요소">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.02</span><span class="sep">·</span> 본질을 본다는 것
+          <span class="step">02 / 07</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          기술의 <span style="color:var(--accent-soft)">본질</span>을 본다는 건,<br />이 셋을 본다는 것
+        </h2>
+
+        <div class="ess-grid">
+          <div class="ess-card" data-anim style="--d:2">
+            <div class="es-n">1</div>
+            <h3>탄생 목적</h3>
+            <p>이 기술은 <b style="color:var(--text)">어떤 문제를 풀려고</b> 세상에 나왔는가.</p>
+            <div class="es-q">"이게 없던 시절엔 뭐가 불편했지?"</div>
+          </div>
+          <div class="ess-card" data-anim style="--d:3">
+            <div class="es-n">2</div>
+            <h3>장단점</h3>
+            <p><b style="color:var(--text)">어떤 상황에서 유리하고, 어떤 상황에서 불리한가</b>.</p>
+            <div class="es-q">"이걸 얻는 대신, 무엇을 포기하는 거지?"</div>
+          </div>
+          <div class="ess-card" data-anim style="--d:4">
+            <div class="es-n">3</div>
+            <h3>현장 활용</h3>
+            <p>현업에서는 <b style="color:var(--text)">실제로 어떻게 쓰는가</b>.</p>
+            <div class="es-q">"교재 말고, 현업에선 어떻게 쓰지?"</div>
+          </div>
+        </div>
+
+        <div class="bridge-line" data-anim style="--d:5">
+          본질을 이해해야 <b>확장</b>할 수 있습니다. 배운 것 너머를 <b>스스로 찾아 이해하는 힘</b>이 여기서 나옵니다.
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>18</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 16 · CH.02 BFS × DFS ═══════════════ -->
+      <section class="slide" data-title="넓게, 그리고 깊게">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.02</span><span class="sep">·</span> 주도적으로 파는 법
+          <span class="step">03 / 07</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          넓게 훑다가, 꽂히면 깊게 팝니다
+        </h2>
+
+        <p class="lead" data-anim style="--d:2;max-width:860px;margin-top:12px;font-size:18px">
+          정해진 순서대로 훑는 게 아니라, <span class="mark">궁금해진 지점</span>에서 파고드는 방식입니다.
+        </p>
+
+        <div class="graph-wrap" data-anim style="--d:3">
+          <svg viewBox="0 0 1104 236" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="gg" gradientUnits="userSpaceOnUse" x1="60" y1="0" x2="890" y2="0">
+                <stop offset="0%" stop-color="#6E8BFF"/>
+                <stop offset="100%" stop-color="#4FD8C4"/>
+              </linearGradient>
+            </defs>
+
+            <!-- broad fan (BFS) -->
+            <path class="gedge" d="M60,118 C130,118 140,40 210,40"/>
+            <path class="gedge" d="M60,118 C130,118 140,86 210,86"/>
+            <path class="gedge on" d="M60,118 C130,118 140,150 210,150"/>
+            <path class="gedge" d="M60,118 C130,118 140,196 210,196"/>
+
+            <!-- deep chain (DFS) -->
+            <path class="gedge on" d="M210,150 C290,150 300,150 380,150"/>
+            <path class="gedge on" d="M380,150 C460,150 470,118 550,118"/>
+            <path class="gedge on" d="M550,118 C630,118 640,150 720,150"/>
+            <path class="gedge on" d="M720,150 C800,150 810,118 890,118"/>
+            <path class="gedge" d="M380,150 C460,150 470,205 550,205"/>
+            <path class="gedge" d="M550,118 C630,118 640,60 720,60"/>
+
+            <circle class="gnode on" cx="60"  cy="118" r="13"/>
+            <circle class="gnode" cx="210" cy="40"  r="10"/>
+            <circle class="gnode" cx="210" cy="86"  r="10"/>
+            <circle class="gnode on" cx="210" cy="150" r="12"/>
+            <circle class="gnode" cx="210" cy="196" r="10"/>
+            <circle class="gnode on" cx="380" cy="150" r="12"/>
+            <circle class="gnode" cx="550" cy="205" r="9"/>
+            <circle class="gnode on" cx="550" cy="118" r="12"/>
+            <circle class="gnode" cx="720" cy="60"  r="9"/>
+            <circle class="gnode on" cx="720" cy="150" r="12"/>
+            <circle class="gnode on" cx="890" cy="118" r="13"/>
+
+            <text class="glabel a" x="128" y="228">넓게 훑기</text>
+            <text class="glabel b" x="520" y="26">꽂힌 곳을 깊게 파기</text>
+          </svg>
+        </div>
+
+        <div class="bridge-line" data-anim style="--d:4">
+          누가 시켜서가 아니라 <b>내 궁금증과 필요</b>에서 출발할 때, 학습 효율은 폭발적으로 올라갑니다.
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>19</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 17 · CH.02 CS TIMING ═══════════════ -->
+      <section class="slide" data-title="CS 병행">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.02</span><span class="sep">·</span> CS는 언제 하는가
+          <span class="step">04 / 07</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          CS는 <span style="color:var(--accent-soft)">따로</span>, 그리고 <span style="color:var(--accent-soft)">일찍</span>
+        </h2>
+
+        <div class="opt-list">
+          <div class="opt-row no" data-anim style="--d:2">
+            <div class="opt-mark">✕</div>
+            <div>
+              <h3>CS를 먼저 다 끝내고 실무로</h3>
+              <p>이론부터 완주하려다 보면 <b>실무 능력을 갖추기까지 너무 오래</b> 걸립니다. 권하지 않습니다.</p>
+            </div>
+          </div>
+
+          <div class="opt-row no" data-anim style="--d:3">
+            <div class="opt-mark">✕</div>
+            <div>
+              <h3>실무만 하고 CS는 나중에</h3>
+              <p>당장은 굴러가지만, 경력이 쌓일수록 <b>이해의 한계에 먼저 부딪힙니다</b>.</p>
+            </div>
+          </div>
+
+          <div class="opt-row yes" data-anim style="--d:4">
+            <div class="opt-mark">✓</div>
+            <div>
+              <h3>경력 초반에, 실무와 나란히</h3>
+              <p>지금 따로 쌓아 둔 CS는 <b>경력이 쌓일수록 더 폭넓은 이해</b>로 돌아옵니다.
+                 그 준비를 해 둘 때가 바로 <b>지금</b>입니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>20</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 18 · CH.02 AI AS SPARRING PARTNER ═══════════════ -->
+      <section class="slide" data-title="AI 활용법">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.02</span><span class="sep">·</span> AI를 쓰는 법
+          <span class="step">05 / 07</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          AI는 코드 생성기가 아니라, <span style="color:var(--accent-soft)">토론 상대</span>입니다
+        </h2>
+
+        <div class="ai-grid">
+          <div class="ai-card" data-anim style="--d:2">
+            <div class="ai-t">내 생각을 던지고<br />검증받기</div>
+            <div class="ai-quotes">
+              <div class="ai-q">"나는 이렇게 생각하는데, 어떻게 봐?"</div>
+              <div class="ai-q">"이렇게 구현하면 장점이랑 단점이 뭐야?"</div>
+              <div class="ai-q">"이 상황에서 이 대응이 맞다고 생각해?"</div>
+            </div>
+            <p>답을 받는 게 아니라 <b>내 판단을 시험대에 올리는 것</b></p>
+          </div>
+
+          <div class="ai-card" data-anim style="--d:3">
+            <div class="ai-t">이해될 때까지<br />캐묻기</div>
+            <div class="ai-quotes">
+              <div class="ai-q">"그 개념 더 쉽게 설명해봐."</div>
+              <div class="ai-q">"예시 들어서 다시 설명해줘."</div>
+              <div class="ai-q">"아직 이해 안 돼. 다른 방식으로 해봐."</div>
+            </div>
+            <p>사람에겐 눈치 보여 못 하는 걸, <b>AI에겐 마음껏</b></p>
+          </div>
+
+          <div class="ai-card" data-anim style="--d:4">
+            <div class="ai-t">내 이해를<br />되짚어 확인하기</div>
+            <div class="ai-quotes">
+              <div class="ai-q">"내가 이렇게 이해했는데 맞아?"</div>
+              <div class="ai-q">"그럼 이런 경우엔 이렇게 되는 거야?"</div>
+              <div class="ai-q">"내 설명에서 틀린 부분 짚어줘."</div>
+            </div>
+            <p>끈질기게 확인해야 <b>내 것이 됩니다</b></p>
+          </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>21</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 22 · CH.02 OOP IN THE AI ERA ═══════════════ -->
+      <section class="slide" data-title="AI 시대의 객체지향">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.02</span><span class="sep">·</span> AI 시대의 객체지향
+          <span class="step">06 / 07</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          AI가 코드를 쓸수록,<br /><span style="color:var(--accent-soft)">설계도</span>를 쥔 사람이 필요해집니다
+        </h2>
+
+        <div class="oop-def" data-anim style="--d:2">
+          <div class="od-label">객체지향 설계란</div>
+          <div class="od-steps">
+            <span class="od-step">구성요소의 경계를 나누고</span>
+            <span class="od-arrow">→</span>
+            <span class="od-step">각자에게 책임과 역할을 주고</span>
+            <span class="od-arrow">→</span>
+            <span class="od-step">조립하듯 확장할 수 있게 만드는</span>
+            <span class="od-arrow">=</span>
+            <span class="od-step" style="color:var(--accent-soft)">설계도 작성법</span>
+          </div>
+        </div>
+
+        <div class="oop-then">
+          <div class="oop-card bad" data-anim style="--d:3">
+            <div class="oc-t">설계도가 없으면</div>
+            <p>AI가 만든 코드가 <b>방향 없이 불어나</b>,
+               결국 아무도 제어할 수 없는 <b>코드 덩어리</b>가 됩니다.</p>
+          </div>
+          <div class="oop-card good" data-anim style="--d:4">
+            <div class="oc-t">설계도를 쥐고 있으면</div>
+            <p>경계와 역할에 맞춰 <b>AI에게 지시</b>할 수 있고,
+               그 위에 <b>튼튼한 시스템</b>이 쌓입니다.</p>
+          </div>
+        </div>
+
+        <div class="bridge-line" data-anim style="--d:5">
+          그럼 이 <b>설계 감각</b>은 어디서 익힐 수 있을까요?
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>22</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 23 · CH.02 WHY JAVA/SPRING ═══════════════ -->
+      <section class="slide" data-title="왜 자바 · 스프링">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.02</span><span class="sep">·</span> 왜 자바 · 스프링인가
+          <span class="step">07 / 07</span>
+        </div>
+
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:24px;padding-bottom:20px">
+          <h2 class="ch-title" data-anim style="--d:1;margin-top:0">
+            <span style="color:var(--accent-soft)">객체지향 설계</span>를 배우기에<br />이만한 교재가 없습니다
+          </h2>
+
+          <div class="value-grid" data-anim style="--d:2;margin-top:0">
+            <div class="value-card">
+              <div class="vc-tag">다른 스택</div>
+              <h3>지원은 하되, 강제하지 않습니다</h3>
+              <p>객체지향을 쓸 수는 있지만 <b>그만큼 자유로워서</b>,
+                 원칙을 지키지 않아도 그냥 굴러갑니다. 그래서 몸에 배지 않습니다.</p>
+            </div>
+            <div class="value-card ai">
+              <div class="vc-tag">스프링</div>
+              <h3>구조 자체가 원칙을 요구합니다</h3>
+              <p>객체지향 설계 철학이 가장 잘 녹아 있으면서, <b>가장 널리 쓰이는 대규모 프로젝트</b>입니다.
+                 쓰다 보면 자연스럽게 그 설계 방식을 따르게 됩니다.</p>
+            </div>
+          </div>
+
+          <div class="close-line" data-anim style="--d:3;margin-top:0;font-size:23px">
+            스프링을 배운다는 건 사용법을 외우는 게 아니라,
+            <span class="accent">그 안에 담긴 설계 철학을 몸에 익히는 일</span>입니다
+          </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>23</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 24 · CH.03 DIVIDER ═══════════════ -->
+      <section class="slide chapter-divider" data-title="CH.03 표지">
+        <div class="cd-ghost">03</div>
+
+        <div class="cd-label" data-anim style="--d:0">Chapter 03</div>
+
+        <h1 class="cd-title" data-anim style="--d:1">
+          부트캠프<br />활용법
+        </h1>
+
+        <p class="cd-desc" data-anim style="--d:2">
+          같은 27주를 보내도 결과가 갈립니다. <span class="mark">얼마나 전략적으로 활용하느냐</span>의 차이입니다.
+        </p>
+
+        <div class="cd-topics" data-anim style="--d:3">
+          <span class="cd-topic">스프린트 미션</span>
+          <span class="cd-topic">팀 프로젝트</span>
+          <span class="cd-topic">+α</span>
+          <span class="cd-topic">포트폴리오로 만들기</span>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>24</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 25 · CH.03 THE STRUCTURE ═══════════════ -->
+      <section class="slide" data-title="7개월의 뼈대">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.03</span><span class="sep">·</span> 부트캠프 활용법
+          <span class="step">01 / 07</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          27주는 <span style="color:var(--accent-soft)">두 개의 축</span>으로 굴러갑니다
+        </h2>
+
+        <div class="tl">
+          <div class="tl-band" data-anim style="--d:2">
+            <span class="tb-t">스프린트 미션</span>
+            <span class="tb-s">— 커리큘럼 전 구간, 배운 주제마다 개인 구현</span>
+          </div>
+
+          <div class="tl-rail" data-anim style="--d:3">
+            <div class="tl-proj"     style="left:29.6%; width:11.1%"><b>초급</b><span>9–11주</span></div>
+            <div class="tl-proj mid" style="left:48.1%; width:14.8%"><b>중급</b><span>14–17주</span></div>
+            <div class="tl-proj adv" style="left:77.8%; width:22.2%"><b>고급</b><span>22–27주</span></div>
+          </div>
+
+          <div class="tl-ticks" data-anim style="--d:4">
+            <span>1주</span><span>7주</span><span>14주</span><span>21주</span><span>27주</span>
+          </div>
+        </div>
+
+        <div class="bridge-line" data-anim style="--d:5">
+          <b>혼자 쌓는 축</b>과 <b>같이 만드는 축</b>. 이 둘을 어떻게 활용하느냐가 7개월의 결과를 가릅니다.
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>25</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 26 · CH.03 SPRINT MISSION STRUCTURE ═══════════════ -->
+      <section class="slide" data-title="스프린트 미션 구조">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.03</span><span class="sep">·</span> 스프린트 미션
+          <span class="step">02 / 07</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          배운 걸 그 자리에서, 코드로
+        </h2>
+
+        <p class="lead" data-anim style="--d:2;max-width:900px;margin-top:12px;font-size:18px">
+          주제 하나가 끝날 때마다 요구사항이 주어지고, 구현이 <span class="mark">쌓입니다</span>.
+          27주 뒤엔 채팅 서비스 하나가 완성되어 있습니다.
+        </p>
+
+        <div class="acc" data-anim style="--d:3">
+          <div class="acc-col">
+            <div class="acc-bars"><div class="acc-b"></div></div>
+            <div class="acc-lb">Java · Git<br />협업</div>
+          </div>
+          <div class="acc-col">
+            <div class="acc-bars"><div class="acc-b"></div><div class="acc-b"></div></div>
+            <div class="acc-lb">자료구조<br />파일 저장</div>
+          </div>
+          <div class="acc-col">
+            <div class="acc-bars"><div class="acc-b"></div><div class="acc-b"></div><div class="acc-b"></div></div>
+            <div class="acc-lb">Spring<br />전환</div>
+          </div>
+          <div class="acc-col">
+            <div class="acc-bars"><div class="acc-b"></div><div class="acc-b"></div><div class="acc-b"></div><div class="acc-b"></div></div>
+            <div class="acc-lb">REST API<br />문서화</div>
+          </div>
+          <div class="acc-col">
+            <div class="acc-bars"><div class="acc-b"></div><div class="acc-b"></div><div class="acc-b"></div><div class="acc-b"></div><div class="acc-b"></div></div>
+            <div class="acc-lb">DB 설계<br />JPA</div>
+          </div>
+          <div class="acc-col">
+            <div class="acc-bars"><div class="acc-b"></div><div class="acc-b"></div><div class="acc-b"></div><div class="acc-b"></div><div class="acc-b"></div><div class="acc-b"></div></div>
+            <div class="acc-lb">테스트 · 배포<br />보안 · 성능</div>
+          </div>
+          <div class="acc-col">
+            <div class="acc-bars"><div class="acc-b"></div><div class="acc-b"></div><div class="acc-b"></div><div class="acc-b"></div><div class="acc-b"></div><div class="acc-b"></div><div class="acc-b"></div></div>
+            <div class="acc-lb">완성된<br />채팅 서비스</div>
+          </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>26</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 27 · CH.03 THREE OPPORTUNITIES ═══════════════ -->
+      <section class="slide" data-title="스프린트 미션의 가치">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.03</span><span class="sep">·</span> 스프린트 미션
+          <span class="step">03 / 07</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          여기에 <span style="color:var(--accent-soft)">세 가지</span>가 들어 있습니다
+        </h2>
+
+        <div class="ess-grid">
+          <div class="ess-card" data-anim style="--d:2">
+            <div class="es-n">1</div>
+            <h3>즉시 복습</h3>
+            <p>배운 내용을 <b style="color:var(--text)">바로 코드로</b> 옮기며 확인합니다.<br />그래야 강의가 내 것이 됩니다.</p>
+          </div>
+          <div class="ess-card" data-anim style="--d:3">
+            <div class="es-n">2</div>
+            <h3>모범답안 해설</h3>
+            <p>실무 경험이 많은 개발자들이 만든 해설입니다.<br />사실상 <b style="color:var(--text)">시니어의 코드 설명</b>입니다.</p>
+          </div>
+          <div class="ess-card" data-anim style="--d:4">
+            <div class="es-n">3</div>
+            <h3>PR 코드 리뷰</h3>
+            <p>현업 멘토가 내 PR에 직접 리뷰를 남깁니다.<br /><b style="color:var(--text)">신입이 어디서도 받기 힘든</b> 피드백입니다.</p>
+          </div>
+        </div>
+
+        <div class="close-line" data-anim style="--d:5">
+          강사이자 멘토, 그리고 면접관으로서 말씀드리면 —<br />
+          이 과정만 착실히 밟고 기술적으로 잘 설명할 수 있어도
+          <span class="accent">취업 준비의 절반 이상은 끝납니다</span>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>27</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 28 · CH.03 TEAM PROJECTS ═══════════════ -->
+      <section class="slide" data-title="팀 프로젝트 3회">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.03</span><span class="sep">·</span> 팀 프로젝트
+          <span class="step">04 / 07</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          세 번의 팀 프로젝트, 각각 목표가 다릅니다
+        </h2>
+
+        <div class="proj-grid">
+          <div class="proj-card" data-anim style="--d:2">
+            <div class="proj-head"><h3>초급</h3><span class="pw">9–11주 · 3주</span></div>
+            <div class="proj-goal">협업 자체가 목표</div>
+            <p>기간이 짧고 배운 것도 아직 적습니다. 결과물보다
+               <b>이슈 관리 · 스크럼 · Git 형상 관리</b>를 몸에 익히는 데 의미를 두세요.
+               협업은 그 자체로 쉽지 않은 기술입니다.</p>
+          </div>
+          <div class="proj-card" data-anim style="--d:3">
+            <div class="proj-head"><h3>중급</h3><span class="pw">14–17주 · 4주</span></div>
+            <div class="proj-goal">긴 호흡의 협업</div>
+            <p>4주면 이것저것 시도해 볼 수 있습니다. 여기서부터
+               <b>팀으로 일하는 과정을 제대로</b> 겪을 수 있습니다.</p>
+          </div>
+          <div class="proj-card adv" data-anim style="--d:4">
+            <div class="proj-head"><h3>고급</h3><span class="pw">22–27주 · 6주</span></div>
+            <div class="proj-goal">시스템 설계까지</div>
+            <p>서비스 하나를 <b>끝까지 완성도 있게 만들어 볼</b> 수 있는 기회입니다.
+               조금 더 욕심을 내서, 커리큘럼에서 구체적으로 다루지 않은
+               <b>확장된 시스템 설계</b>까지 도전해보세요.
+               모놀리식 구조에서 벗어나 <b>일부 기능을 마이크로서비스로 분리</b>하는
+               고급 설계 패턴까지 시도해볼 수 있습니다.</p>
+          </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>28</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 29 · CH.03 PLUS ALPHA ═══════════════ -->
+      <section class="slide" data-title="플러스 알파">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.03</span><span class="sep">·</span> 차이가 나는 지점
+          <span class="step">05 / 07</span>
+        </div>
+
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:22px;padding-bottom:18px">
+          <h2 class="ch-title" data-anim style="--d:1;margin-top:0">
+            차이는 <span style="color:var(--accent-soft)">'+α'</span>에서 났습니다
+          </h2>
+
+          <div class="value-grid" data-anim style="--d:2;margin-top:0">
+            <div class="value-card">
+              <div class="vc-tag">요구사항까지</div>
+              <h3>이것만으로도 충분히 훌륭합니다</h3>
+              <p>주어진 스프린트 미션과 프로젝트를 <b>끝까지 완수하는 것</b>만 해도
+                 결코 쉬운 일이 아닙니다.</p>
+            </div>
+            <div class="value-card ai">
+              <div class="vc-tag">요구사항 너머</div>
+              <h3>취업 결과가 좋았던 사람들의 공통점</h3>
+              <p>스스로 공부하고, 시도하고, 시행착오를 겪으면서
+                 <b>기술을 스스로 선택하고 도입하는 능력</b>을 길렀습니다.
+                 그리고 그 경험이 그대로 <b>포트폴리오</b>가 됐습니다.</p>
+            </div>
+          </div>
+
+          <div class="alpha-chips" data-anim style="--d:3">
+            <span class="alpha-chip">스프린트 미션을 <b>더 큰 시스템으로</b> 키우기</span>
+            <span class="alpha-chip"><b>기능을 직접 추가</b>해 진짜 내 프로젝트로</span>
+            <span class="alpha-chip">프로젝트를 <b>검증하고 확장</b>해 보기</span>
+          </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>29</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 30 · CH.03 AFTER THE CAMP ═══════════════ -->
+      <section class="slide" data-title="끝나고가 진짜">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.03</span><span class="sep">·</span> 포트폴리오로 만들기
+          <span class="step">06 / 07</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          만든 것을 <span style="color:var(--accent-soft)">내 것</span>으로 만드는 일이 남았습니다
+        </h2>
+
+        <div class="num-list">
+          <div class="num-row" data-anim style="--d:2">
+            <div class="nr-n">1</div>
+            <div>
+              <h3>고민 · 논의 · 결정을 메모해 두세요</h3>
+              <p>왜 그렇게 결정했는지, 무엇을 학습했는지. 취업 준비를 시작할 때
+                 <b>이력서와 포트폴리오에 쓸 거리</b>가 여기서 나옵니다.</p>
+            </div>
+          </div>
+          <div class="num-row" data-anim style="--d:3">
+            <div class="nr-n">2</div>
+            <div>
+              <h3>팀원이 짠 코드까지 파악하세요</h3>
+              <p>왜 이렇게 작성했는지, 그 안의 의도와 스타일까지. 부족했던 부분을 보완하면
+                 그 프로젝트는 <b>온전히 내 포트폴리오</b>가 됩니다.</p>
+            </div>
+          </div>
+          <div class="num-row" data-anim style="--d:4">
+            <div class="nr-n">3</div>
+            <div>
+              <h3>팀원과 기술 이야기를 자주 하세요</h3>
+              <p>생각을 주고받다 보면 배운 것이 단단해집니다. 그렇게 <b>체화해야</b>
+                 면접에서도 술술 나옵니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>30</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 31 · CH.03 AHEAD ═══════════════ -->
+      <section class="slide" data-title="몇 걸음 앞에">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.03</span><span class="sep">·</span> 7개월 뒤
+          <span class="step">07 / 07</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          그러면 7개월 뒤,<br /><span style="color:var(--accent-soft)">몇 걸음 앞</span>에 서 있게 됩니다
+        </h2>
+
+        <div class="ahead-wrap" data-anim style="--d:2">
+          <svg viewBox="0 0 1104 330" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="ahg" gradientUnits="userSpaceOnUse" x1="60" y1="0" x2="940" y2="0">
+                <stop offset="0%"   stop-color="#4FD8C4"/>
+                <stop offset="100%" stop-color="#6E8BFF"/>
+              </linearGradient>
+            </defs>
+
+            <!-- baseline -->
+            <path class="ah-base" d="M60,276 L1000,276"/>
+            <text class="ah-mute" x="60" y="304">같은 출발선에서 시작합니다</text>
+
+            <!-- ascending path (accelerating) -->
+            <path class="ah-path" d="M60,276
+              C88,274 173,269 230,263
+              C288,257 347,251 405,242
+              C463,233 522,224 580,210
+              C638,197 697,182 755,161
+              C813,140 901,97 930,84"/>
+
+            <circle class="ah-dot" cx="60"  cy="276" r="7"/>
+            <circle class="ah-dot" cx="230" cy="263" r="8"/>
+            <circle class="ah-dot" cx="405" cy="242" r="8"/>
+            <circle class="ah-dot" cx="580" cy="210" r="8"/>
+            <circle class="ah-dot" cx="755" cy="161" r="8"/>
+            <circle class="ah-dot goal" cx="930" cy="84" r="11"/>
+
+            <text class="ah-lb" x="216" y="247" text-anchor="end">완성한 서비스 하나</text>
+            <text class="ah-lb" x="391" y="226" text-anchor="end">현업 멘토의 코드 리뷰</text>
+            <text class="ah-lb" x="566" y="194" text-anchor="end">세 번의 팀 협업 경험</text>
+            <text class="ah-lb" x="741" y="145" text-anchor="end">+α로 확장한 시스템</text>
+            <text class="ah-lb goal" x="930" y="58" text-anchor="middle">설명할 수 있는 포트폴리오</text>
+
+            <!-- gap -->
+            <path class="ah-gap" d="M1000,84 L1000,276"/>
+            <path class="ah-gap" d="M930,84 L1006,84"/>
+            <text class="ah-gaplb" x="1012" y="188" writing-mode="tb" letter-spacing="2">앞선 거리</text>
+          </svg>
+        </div>
+
+        <div class="bridge-line" data-anim style="--d:3">
+          출발선은 같습니다. <b>7개월 동안 쌓은 것</b>이 다르면, 지원서를 낼 때 서 있는 자리가 달라집니다.
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>31</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 32 · CH.04 DIVIDER ═══════════════ -->
+      <section class="slide chapter-divider" data-title="CH.04 표지">
+        <div class="cd-ghost">04</div>
+
+        <div class="cd-label" data-anim style="--d:0">Chapter 04</div>
+
+        <h1 class="cd-title" data-anim style="--d:1">
+          참여<br />마인드셋
+        </h1>
+
+        <p class="cd-desc" data-anim style="--d:2">
+          무엇을 할지는 정리됐습니다. 남은 건 <span class="mark">어떤 마음으로 7개월을 보낼 것인가</span>입니다.
+        </p>
+
+        <div class="cd-topics" data-anim style="--d:3">
+          <span class="cd-topic">겁내지 않기</span>
+          <span class="cd-topic">AI 시대</span>
+          <span class="cd-topic">피드백</span>
+          <span class="cd-topic">동료</span>
+          <span class="cd-topic">나만의 루틴</span>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>32</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 33 · CH.04 DON'T BE AFRAID ═══════════════ -->
+      <section class="slide" data-title="겁내지 마세요">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.04</span><span class="sep">·</span> 참여 마인드셋
+          <span class="step">01 / 05</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          겁내지 마세요
+        </h2>
+
+        <p class="lead" data-anim style="--d:2;max-width:900px;margin-top:12px;font-size:18px">
+          앞으로 배워야 할 건 엄청나게 많습니다. 솔직히 말하면, <span class="mark">그게 전부도 아닙니다</span>.
+          그래도 괜찮습니다.
+        </p>
+
+        <div class="opt-list">
+          <div class="opt-row no" data-anim style="--d:3">
+            <div class="opt-mark">✕</div>
+            <div>
+              <h3>옆 사람과 비교하기</h3>
+              <p>조급해지기만 할 뿐, <b>아무것도 나아지지 않습니다</b>.</p>
+            </div>
+          </div>
+
+          <div class="opt-row yes" data-anim style="--d:4">
+            <div class="opt-mark">✓</div>
+            <div>
+              <h3>어제의 나와 비교하기</h3>
+              <p style="margin-bottom:12px">얼마나 성장했는지, 그리고 <b>어떻게 더 성장할지</b>만 고민하세요.</p>
+              <div class="cmp-chips">
+                <span class="cmp-chip">어제의 나</span>
+                <span class="cmp-chip">지난주의 나</span>
+                <span class="cmp-chip">지난달의 나</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="close-line" data-anim style="--d:5;font-size:24px">
+          조금씩 성장하는 기쁨을 누리다 보면, 어느 날 문득 —<br />
+          <span class="accent">"나, 꽤 괜찮은 엔지니어일지도?"</span>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>33</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 34 · CH.04 AI ═══════════════ -->
+      <section class="slide" data-title="AI 시대">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.04</span><span class="sep">·</span> AI 시대
+          <span class="step">02 / 05</span>
+        </div>
+
+        <h2 class="ch-title" data-anim style="--d:1">
+          "AI가 개발자를 대체한다"는<br />얘기에 <span style="color:var(--accent-soft)">쫄 것 없습니다</span>
+        </h2>
+
+        <div class="claim" data-anim style="--d:2">
+          <p>몸으로 직접 하는 기술직을 빼면, <b>백엔드 개발자만큼 대체하기 까다로운 직업도 드뭅니다.</b>
+             이 업계가 기술 트렌드를 워낙 빨리 따라가다 보니 그렇게 보일 뿐,
+             다른 사무직은 이미 훨씬 큰 위협을 받고 있습니다.</p>
+        </div>
+
+        <div class="value-grid" data-anim style="--d:3;margin-top:18px">
+          <div class="value-card">
+            <div class="vc-tag">질문을 바꾸세요</div>
+            <h3>"이걸 배우는 게 맞나?" 대신</h3>
+            <p><b>"이 기회로 어떻게 성장할까"</b>를 고민하는 편이
+               인생에 여러모로 도움이 됩니다.</p>
+          </div>
+          <div class="value-card ai">
+            <div class="vc-tag">설령 다른 길을 가더라도</div>
+            <h3>시스템적 사고는 어디서든 남습니다</h3>
+            <p>여기서 익힌 사고방식은 <b>어떤 일을 하든 '일 잘하는 사람'이 되는 자양분</b>이 됩니다.
+               버려지는 7개월이 아닙니다.</p>
+          </div>
+        </div>
+
+        <div class="bridge-line" data-anim style="--d:4">
+          그러니 지금은 <b>부트캠프를 알차게 수료하는 것</b> 하나에만 집중하면 됩니다.
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>34</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 35 · CH.04 SHIP & FEEDBACK ═══════════════ -->
+      <section class="slide" data-title="내고 나서 고치기">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.04</span><span class="sep">·</span> 피드백
+          <span class="step">03 / 05</span>
+        </div>
+
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:24px;padding-bottom:18px">
+          <h2 class="ch-title" data-anim style="--d:1;margin-top:0">
+            완성해서 내지 말고,<br />내고 나서 <span style="color:var(--accent-soft)">피드백 받으세요</span>
+          </h2>
+
+          <div class="value-grid" data-anim style="--d:2;margin-top:0">
+            <div class="value-card">
+              <div class="vc-tag">내는 법</div>
+              <h3>완벽에 대한 부담을 내려놓으세요</h3>
+              <p>중요한 건 <b>어떻게든 마무리 짓는 연습</b>입니다.
+                 못 낸 코드는 피드백을 받지 못하고, 피드백을 못 받은 코드는 늘지 않습니다.</p>
+            </div>
+            <div class="value-card ai">
+              <div class="vc-tag">받는 법</div>
+              <h3>지적을 겸허히 받아들이세요</h3>
+              <p>백엔드는 <b>옳으냐 그르냐를 논리적으로 냉철하게</b> 따지는 분야입니다.
+                 감정에 휘둘려 봐야 득이 될 게 없습니다.
+                 터무니없는 지적이 아니라면, <b>의견을 주는 사람이 있다는 것 자체에 감사</b>하세요.</p>
+            </div>
+          </div>
+
+          <div class="close-line" data-anim style="--d:3;margin-top:0;font-size:23px">
+            피드백 하나가 <span class="accent">나를 한 층 더 키운다</span>는 마음으로 받으세요
+          </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>35</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 36 · CH.04 FIRST COLLEAGUES ═══════════════ -->
+      <section class="slide" data-title="첫 동료">
+        <div class="ch-kicker" data-anim style="--d:0">
+          <span class="chno">CH.04</span><span class="sep">·</span> 동료
+          <span class="step">04 / 05</span>
+        </div>
+
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:26px;padding-bottom:18px">
+          <h2 class="ch-title" data-anim style="--d:1;margin-top:0">
+            옆 사람은 경쟁자가 아니라,<br /><span style="color:var(--accent-soft)">첫 동료</span>입니다
+          </h2>
+
+          <div class="claim" data-anim style="--d:2;margin-top:0">
+            <p>기술은 빠르게 바뀝니다. 그 흐름을 따라가며 <b>내 관점을 세우려면</b>,
+               터놓고 이야기할 수 있는 <b>엔지니어 친구들</b>이 반드시 필요합니다.</p>
+          </div>
+
+          <div class="value-grid" data-anim style="--d:3;margin-top:0">
+            <div class="value-card">
+              <div class="vc-tag">지금은</div>
+              <h3>팀 프로젝트 파트너이자 서로의 리뷰어</h3>
+              <p>같이 만들고, 서로의 코드를 보며 <b>생각을 주고받는 사이</b>입니다.</p>
+            </div>
+            <div class="value-card ai">
+              <div class="vc-tag">앞으로는</div>
+              <h3>커리어 내내 이어질 첫 네트워크</h3>
+              <p>SB17 동기는 여러분의 <b>첫 개발자 인맥</b>이 됩니다.
+                 7개월 동안 서로의 버팀목이 되어 주세요.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>36</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 37 · CH.04 FINAL MESSAGE ═══════════════ -->
+      <section class="slide final-slide" data-title="마지막으로">
+        <div class="orb" style="right:-190px;top:-170px;opacity:.4"></div>
+
+        <div class="final-eye" data-anim style="--d:0">마지막으로</div>
+
+        <h1 class="final-title" data-anim style="--d:1">
+          흔들리지 말고,<br /><span style="color:var(--accent-soft)">나만의 루틴</span>으로 수료일까지
+        </h1>
+
+        <div class="final-body" data-anim style="--d:2">
+          <div class="final-card">
+            <p>주변 사람들과 손잡고, 흔들림 없이 7개월 뒤 수료일까지
+               차근차근 쌓아 가는 것. <b>생각보다 어렵습니다.</b></p>
+          </div>
+          <div class="final-card">
+            <p>그런데 마음먹기에 따라서는, <b>그것만큼 쉬운 것도 없습니다.</b></p>
+          </div>
+        </div>
+
+        <div class="final-sign" data-anim style="--d:3">
+          주변에 휘둘리지 말고, <span class="accent">건강하게 잘 수료하시길 바랍니다</span>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>37</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 38 · Q&A (closing) ═══════════════ -->
+      <section class="slide qa-slide" data-title="Q&amp;A">
+        <div class="orb" style="right:-200px;top:-180px;opacity:.42"></div>
+
+        <div class="qa-body">
+          <div class="eyebrow" data-anim style="--d:0">Q &amp; A</div>
+
+          <h1 class="qa-title" data-anim style="--d:1">
+            무엇이든 <span style="color:var(--accent-soft)">물어보세요</span>
+          </h1>
+
+          <p class="lead" data-anim style="--d:2;max-width:860px;margin-top:16px">
+            스프링과 백엔드 엔지니어링, 기술 선택과 학습 방향, 개발자의 회사 생활과 커리어까지.<br />
+            <span class="mark">궁금한 건 무엇이든 좋습니다.</span>
+          </p>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>38</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SLIDE 39 · INTERVIEW LINK ═══════════════ -->
+      <section class="slide itv-slide" data-title="인터뷰">
+        <div class="itv-grid">
+          <div>
+            <div class="eyebrow" data-anim style="--d:0">Codeit Sprint Story</div>
+
+            <h2 class="itv-title" data-anim style="--d:1">
+              인터뷰도 한번<br /><span style="color:var(--accent-soft)">읽어봐 주세요</span>
+            </h2>
+
+            <a class="itv-link" data-anim style="--d:2"
+               href="https://sprint.codeit.kr/blog/71413" target="_blank" rel="noopener">
+              <span class="lk">↗</span>
+              sprint.codeit.kr/blog/71413
+            </a>
+          </div>
+
+          <figure class="itv-shot" data-anim style="--d:3">
+            <img src="data:image/jpeg;base64,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YasO066AAe8yp/nu/VWTWa6VGsNOXGOot0tqc/fpgJMk4LB5XVw8r5Flm634I9iYHUMLO2Ss/ZjUu/BwuTS377N119umI/WGqabZJX0kfR02q5oWHmI4y3PfwcvduymZ8jHVOq6qZrTndLCc+1y2gpcJ8+7GvwLgVntT9Z/y0/eeG3i3emP8wrcI5LFqrRlDVayi1O6tqW1MZYRE0t6PLRjkRn5VlI5Kc94v069Ia/DeJk498038WtMx+CKIi5nsCIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICp62eGmoZp539HGxpcXdfqXusT2i6hm0zoOuudHIyOtJZT0zn8mySODGuPozn1KYTE6cL6wuct01pcqmWR8rpJ34fISXEA8M5WH1Re6bLxwzuhXq4Mkju8z5p3zyucXOkeclxJySe/JVvEQlqHSSeYwcPStYl0R3hbxC4Ssdn7LCmnAFW7PJoVW4AObw5OBVLITJWytA5hT1LRVSsdl/eRw7lIYy0ZPMrypz9Wd2K4uaD0ZPJowp2jS3iJwDsNyQpmNIDQea95Z2tO63AI6x2dhUYmdKd5nsUdekRVTvGO5eP2Jb2qonBacHgqXJyXY4KetE0TZxhejJVTOcoBabYzVX9MMAr2inbwzzVsDu9erTjCsqyay3FlHcmVDmh7RwLTyIXQ2gdq15tlujoaWrbU0UT90QVDd4MaePA5zwzyXLkb8LJrTdX0jMiTDT5zOp3pUTpjmxTkjUTMT9zu6xbT7NcAyK5xvt0zubiC6LP3XV61nUU0FRE2WnmZNG7iHMOQfWFxNpnVUM9NJHXT4DPMOC4nHPgOPYtk2TU12s7mT2utIidx3D5THjvCmcNb/Znu+ft8Tz8TJ8vlV3HvDpVFgumto9tuxbS3IMt9by4u+pP9Du3uKznOeOcrktS1Z1L38HIxZ69WK20UUMqKo3EREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAUFFEEEUUQEREBERAREQEREBERAREQEREEFFEQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQFBFgusteQWPfttsLJrmRgk8WQZ7e093t770pN51DDPnpx6TkyT2XvUmq7bpqk3qgmaqcMspo/Od3nsHeVzptIv1+1TanzSzjdppW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r5RFBE0uJPX3DtJ6gsX05SVN0vEurbvA6KaZnR0dO/nBD3/bO5lQpdOXC6V0N21VOyeSM70NDEPqEJ7ftj3rLVMzERqHF9fPeL3jVY8R7/fKZEUqydW9JkUAoogREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBSuax7CyRjXtPMOGQpkUxOhY59I6XqH78tioy7tEQb+ReXvJ0p8R038xZCit1292E8fFPmkfkx73kaU+JKb+aoe8jSnxJT+wrIkTrt7n0bB/JH5Mc95Gk/iOm9hUPeRpT4jpvYVkaYUdVvdH0bD/JH5Md94+k/iOm9hUPePpT4jpvYVkiJ1W90/RsP8kfkxz3j6U+I6b2FQ94+lPiOm9hWSInVb3Po2D+SPyY57x9KfEdN7Coe8fSvxHTewrJETqt7onjYP5I/JjnvH0p8R03sKe8fSfxHTewrI0Tqt7pjjYP5I/JjnvH0n8R03sKe8fSnxHTewrI0U9dvcnjYP5I/JjnvH0n8R03sKh7x9KfEdN7CskRR1W9z6Nh/kj8lhg0bpaCQSR2Kk3h1ujDse1XmOnggYI4IY4mDk1jQ0D2L1UcqeqZ8tK4qU+zEQlUURUaCgooiBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQf//Z" alt="코드잇 스프린트 스토리 — 강사의 역할을 넘어 좋은 선배 개발자로, 주강사 하규태 님" />
+          </figure>
+        </div>
+
+        <div class="chrome">
+          <div class="brand"><span class="dot"></span> SB17 WELCOME SESSION</div>
+          <div>39</div>
+        </div>
+      </section>
+
+    </div><!-- /track -->
+  </div><!-- /stage -->
+</div><!-- /viewport -->
+
+<div id="nav">
+  <button id="prev" aria-label="이전">‹</button>
+  <div id="dots"></div>
+  <span id="counter">1 / 3</span>
+  <button id="next" aria-label="다음">›</button>
+</div>
+
+<script>
+(function(){
+  const stage   = document.getElementById('stage');
+  const track   = document.getElementById('track');
+  const slides  = Array.from(track.querySelectorAll('.slide'));
+  const dotsBox = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  const bar     = document.getElementById('progress');
+
+  const W = 1280, H = 720;
+  let i = 0;
+
+  /* ---- embed(iframe) detection ---- */
+  let EMBED = false;
+  try { EMBED = window.self !== window.top; } catch (e) { EMBED = true; }
+  if (EMBED) document.body.classList.add('is-embed');
+
+  /* ---- responsive scale ---- */
+  function fit(){
+    const vw = document.documentElement.clientWidth  || window.innerWidth;
+    const vh = document.documentElement.clientHeight || window.innerHeight;
+    const s  = Math.min(vw / W, vh / H);
+    const dx = Math.round((vw - W * s) / 2);
+    const dy = Math.round((vh - H * s) / 2);
+    stage.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + s + ')';
+  }
+  window.addEventListener('resize', fit);
+  fit();
+
+  /* ---- dots ---- */
+  slides.forEach((s, n) => {
+    const d = document.createElement('i');
+    d.title = s.dataset.title || ('Slide ' + (n + 1));
+    d.addEventListener('click', () => go(n));
+    dotsBox.appendChild(d);
+  });
+
+  /* ---- deep link (no history pollution; safe in sandboxed iframe / file://) ---- */
+  function syncHash(){
+    const h = '#' + (i + 1);
+    try {
+      if (window.history && history.replaceState) history.replaceState(null, '', h);
+      else if (!EMBED) location.hash = h;
+    } catch (e) { /* opaque origin or file:// — deep link just unavailable */ }
+  }
+
+  /* ---- render ---- */
+  function render(){
+    track.style.transform = 'translate3d(' + (-i * W) + 'px,0,0)';
+
+    slides.forEach((s, n) => {
+      if (n === i) {
+        // restart the stagger animation
+        s.classList.remove('is-active');
+        void s.offsetWidth;
+        s.classList.add('is-active');
+      } else {
+        s.classList.remove('is-active');
+      }
+    });
+
+    Array.from(dotsBox.children).forEach((d, n) => d.classList.toggle('on', n === i));
+    counter.textContent = (i + 1) + ' / ' + slides.length;
+    prevBtn.disabled = (i === 0);
+    nextBtn.disabled = (i === slides.length - 1);
+    bar.style.width = (((i + 1) / slides.length) * 100) + 'vw';
+    syncHash();
+  }
+
+  function go(n){
+    n = Math.max(0, Math.min(slides.length - 1, n));
+    if (n === i) return;
+    i = n;
+    render();
+  }
+  const next = () => go(i + 1);
+  const prev = () => go(i - 1);
+
+  nextBtn.addEventListener('click', next);
+  prevBtn.addEventListener('click', prev);
+
+  /* ---- keyboard ---- */
+  function onKey(e){
+    if (['ArrowRight','PageDown',' '].includes(e.key)) { e.preventDefault(); next(); }
+    else if (['ArrowLeft','PageUp'].includes(e.key))   { e.preventDefault(); prev(); }
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End')  go(slides.length - 1);
+    else if (e.key === 'f' || e.key === 'F'){
+      try {
+        if (!document.fullscreenEnabled) return;          // iframe without allow="fullscreen"
+        if (!document.fullscreenElement) {
+          const p = document.documentElement.requestFullscreen();
+          if (p && p.catch) p.catch(() => {});
+        } else document.exitFullscreen();
+      } catch (err) { /* 임베드 환경에서 차단됨 — 무시 */ }
+    }
+  }
+
+  /* ---- click zones on stage (also grabs focus so arrow keys work when embedded) ---- */
+  stage.tabIndex = -1;
+  stage.style.outline = 'none';
+  stage.addEventListener('pointerdown', () => { try { stage.focus({preventScroll:true}); } catch(e){} });
+  stage.addEventListener('click', e => {
+    const r = stage.getBoundingClientRect();
+    ((e.clientX - r.left) / r.width > 0.5) ? next() : prev();
+  });
+  document.addEventListener('keydown', onKey);
+
+  /* ---- swipe / trackpad ---- */
+  let x0 = null;
+  stage.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, {passive:true});
+  stage.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 50) (dx < 0 ? next() : prev());
+    x0 = null;
+  }, {passive:true});
+
+  let lock = false;
+  window.addEventListener('wheel', e => {
+    if (lock || Math.abs(e.deltaX) < Math.abs(e.deltaY) || Math.abs(e.deltaX) < 24) return;
+    lock = true;
+    (e.deltaX > 0 ? next() : prev());
+    setTimeout(() => { lock = false; }, 700);
+  }, {passive:true});
+
+  /* ---- deep link ---- */
+  const start = parseInt(location.hash.replace('#',''), 10);
+  if (start >= 1 && start <= slides.length) i = start - 1;
+
+  render();
+})();
+</script>
+</body>
+</html>
